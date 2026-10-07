@@ -67,4 +67,6 @@ GitHub runs the same checks on every pull request. See `docs/BRANCH_PROTECTION.m
 
 ## Deploy
 
+The live site is https://swatch-kr01.onrender.com. Opening it asks for the owner sign-in. Adding `/up` to that address says `OK` and does not ask for a password.
+
 See `docs/DEPLOY_RENDER.md`. Production secrets stay on Render. Do not commit `.env` or `config/master.key`.
