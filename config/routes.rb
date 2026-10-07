@@ -18,4 +18,5 @@ Rails.application.routes.draw do
   root "home#index"
   get "items/new", to: "home#index"
   get "items/:id/edit", to: "home#index", constraints: { id: /\d+/ }
+  get "items/:id", to: "home#index", constraints: { id: /\d+/ }
 end

@@ -28,7 +28,7 @@ Then open http://localhost:3000. The browser asks you to sign in. Locally the na
 
 http://localhost:3000/up should say `OK` and does not ask for a password. Render uses that address to check the app.
 
-After you sign in you should see your library. If it is empty, choose **Add your first swatch**, fill in a title, and save. The new card shows up at the top. **Edit** changes it. **Remove** asks you to confirm first.
+After you sign in you should see your library. Click a card to read the notes in a side panel, and use **Grid** or **List** to change the layout. Press **?** to see the keyboard shortcuts. If the library is empty, choose **Add your first swatch**, fill in a title, and save. The new card shows up at the top. **Edit** changes it. **Remove** asks you to confirm first.
 
 `bin/dev` starts two processes: the Rails server and the Vite dev server (the thing that builds the React page). Leave that terminal open while you use the app. Ctrl-C stops both.
 

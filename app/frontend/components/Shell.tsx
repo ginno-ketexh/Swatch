@@ -1,4 +1,5 @@
 import { Link, Outlet } from "react-router-dom";
+import { Shortcuts } from "./Shortcuts";
 
 type ShellProps = {
   version: string;
@@ -14,6 +15,7 @@ export function Shell({ version }: ShellProps) {
         <p className="font-display text-2xl">Swatch</p>
         <div className="flex flex-wrap items-center gap-4">
           <p>Version {version}</p>
+          <Shortcuts />
           <Link className="min-h-11 underline" to="/items/new">
             Add a swatch
           </Link>
