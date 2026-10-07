@@ -10,7 +10,21 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 0) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "items", force: :cascade do |t|
+    t.string "title", limit: 120, null: false
+    t.string "source_url", limit: 2048
+    t.text "notes"
+    t.string "color", limit: 7
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_at", "id"], name: "index_items_on_created_at_and_id"
+    t.check_constraint "char_length(btrim(title::text)) >= 1 AND char_length(btrim(title::text)) <= 120", name: "items_title_length"
+    t.check_constraint "color IS NULL OR color::text ~ '^#[0-9A-F]{6}$'::text", name: "items_color_hex"
+    t.check_constraint "notes IS NULL OR char_length(notes) <= 2000", name: "items_notes_length"
+    t.check_constraint "source_url IS NULL OR char_length(source_url::text) <= 2048 AND source_url::text ~* '^https?://[^[:space:]/]+'::text", name: "items_source_url_http"
+  end
 end

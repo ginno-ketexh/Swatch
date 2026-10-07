@@ -2,7 +2,7 @@ require "test_helper"
 
 class HomeTest < ActionDispatch::IntegrationTest
   test "home page names the app and shows the version" do
-    get root_path
+    get root_path, headers: owner_headers
 
     assert_response :success
     assert_select "html[lang=en]"

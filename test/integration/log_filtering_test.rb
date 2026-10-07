@@ -14,7 +14,7 @@ class LogFilteringTest < ActionDispatch::IntegrationTest
     sink.level = Logger::DEBUG
     Rails.logger.broadcast_to(sink)
 
-    get root_path, params: SECRETS
+    get root_path, params: SECRETS, headers: owner_headers
 
     logged = output.string
     assert_includes logged, "[FILTERED]"
