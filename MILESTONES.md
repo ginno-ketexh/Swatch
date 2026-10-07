@@ -4,7 +4,7 @@ This is the list of Swatch milestones. Status lives in this file.
 
 | Milestone | Name | Status |
 | --- | --- | --- |
-| M1 | Blank App Deployment | In Progress |
+| M1 | Blank App Deployment | Done |
 | M2 | Save & List Items | Not started |
 | M3 | Interactive React Screen | Not started |
 | M4 | Search, Tags & Filters | Not started |
@@ -14,15 +14,15 @@ This is the list of Swatch milestones. Status lives in this file.
 
 ## M1 — Blank App Deployment
 
-M1-01 through M1-05 stay **In Progress** until this milestone's pull request is merged.
+Done. Merged in pull request #1 on 2026-10-07.
 
 | Story | Name | Status |
 | --- | --- | --- |
-| M1-01 | Project skeleton | In Progress |
-| M1-02 | Health check | In Progress |
-| M1-03 | CI | In Progress |
-| M1-04 | Render deploy | In Progress |
-| M1-05 | Environment settings | In Progress |
+| M1-01 | Project skeleton | Done |
+| M1-02 | Health check | Done |
+| M1-03 | CI | Done |
+| M1-04 | Render deploy | Done |
+| M1-05 | Environment settings | Done |
 | M1-06 | Plain-language explainer | Not started |
 
-M1-06 is a plain-language explainer. It is written separately and is not part of the M1 pull request.
+M1-06 is a plain-language explainer. It is written separately and was not part of pull request #1.
