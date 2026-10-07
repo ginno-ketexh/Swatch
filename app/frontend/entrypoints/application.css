@@ -11,6 +11,8 @@
 */
 :root {
   --swatch-color-canvas: #f4f0e6;
+  --swatch-color-surface: #e7e1d6;
+  --swatch-color-line: #cfc6b8;
   --swatch-color-ink: #1c1915;
   --swatch-color-muted: #3d3832;
   --swatch-color-accent: #7c2d24;
@@ -21,6 +23,8 @@
 
 @theme inline {
   --color-canvas: var(--swatch-color-canvas);
+  --color-surface: var(--swatch-color-surface);
+  --color-line: var(--swatch-color-line);
   --color-ink: var(--swatch-color-ink);
   --color-muted: var(--swatch-color-muted);
   --color-accent: var(--swatch-color-accent);
@@ -52,4 +56,44 @@ body {
 :focus-visible {
   outline: 2px solid var(--swatch-color-accent);
   outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skeleton {
+  background: var(--swatch-color-line);
+  animation: swatch-shimmer 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes swatch-shimmer {
+  from { opacity: 0.45; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+.confirm-dialog {
+  border: 2px solid var(--swatch-color-ink);
+  background: var(--swatch-color-canvas);
+  color: var(--swatch-color-ink);
+  padding: 1.25rem;
+  max-width: min(28rem, calc(100vw - 2rem));
+}
+
+.confirm-dialog::backdrop {
+  background: color-mix(in srgb, var(--swatch-color-ink) 45%, transparent);
 }

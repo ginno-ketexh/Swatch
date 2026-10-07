@@ -32,6 +32,10 @@ services:
         value: production
       - key: SECRET_KEY_BASE
         sync: false
+      - key: OWNER_USERNAME
+        sync: false
+      - key: OWNER_PASSWORD
+        sync: false
       - key: WEB_CONCURRENCY
         value: "1"
       - key: RAILS_MAX_THREADS

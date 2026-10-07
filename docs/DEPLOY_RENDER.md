@@ -22,7 +22,11 @@ Copy the long string it prints. You will paste it into Render in a moment. Do no
 2. Connect GitHub if Render asks you to. Grant access to the Swatch repository.
 3. In the dashboard, open **Blueprints** and choose **New Blueprint Instance**.
 4. Select the Swatch repository. Render reads `render.yaml` from the `main` branch.
-5. Render will ask for `SECRET_KEY_BASE`. Paste the string from `bin/rails secret`. Leave the other values as the file sets them. `DATABASE_URL` is filled in from the database Render creates. You do not type a database password.
+5. Render will ask for three secrets you choose or generate. Do not put them in the repository.
+   - `SECRET_KEY_BASE`: paste the string from `bin/rails secret`.
+   - `OWNER_USERNAME`: a sign-in name you choose for yourself.
+   - `OWNER_PASSWORD`: a long password you choose. This is not the database password.
+   Leave the other values as the file sets them. `DATABASE_URL` is filled in from the database Render creates. You do not type a database password.
 6. Approve the Blueprint.
 
 Render then creates:
@@ -34,8 +38,8 @@ The first deploy takes a few minutes. When it finishes, Render shows a URL that 
 
 ## Check that it is alive
 
-1. Open the `.onrender.com` URL. You should see “Swatch” and a version number.
-2. Open the same URL with `/up` on the end, for example `https://swatch.onrender.com/up`. The page should say `OK` and nothing else.
+1. Open the `.onrender.com` URL. The browser asks for the owner name and password you set (`OWNER_USERNAME` and `OWNER_PASSWORD`). After that you should see your library.
+2. Open the same URL with `/up` on the end, for example `https://swatch.onrender.com/up`. The page should say `OK` and nothing else. This address does not ask for the password, so Render can check the app without knowing it.
 
 If `/up` says `Unavailable`, the app started but cannot reach the database. Check that the Blueprint created `swatch-db` and that `DATABASE_URL` is listed on the web service.
 
@@ -55,7 +59,9 @@ When you move to a paid web service, delete the `db:migrate` line from `bin/rend
 
 Render keeps the last successful version running. The site does not go blank just because a new build failed. Read the deploy log, fix the problem in a new pull request, and merge again.
 
-A deploy also fails fast, with a plain message, if `DATABASE_URL` or `SECRET_KEY_BASE` is missing. The message names the missing setting and does not print secret values.
+A deploy also fails fast, with a plain message, if `DATABASE_URL`, `SECRET_KEY_BASE`, `OWNER_USERNAME`, or `OWNER_PASSWORD` is missing. The message names the missing setting and does not print secret values.
+
+If the site is already on Render from the first milestone, add `OWNER_USERNAME` and `OWNER_PASSWORD` on the web service **before** this version goes live. Open the web service in the Render dashboard, go to **Environment**, and add both. A git deploy does not pop up a form for new secret values. If they are missing, the new version refuses to boot and Render keeps the previous version running. Add the two values, then redeploy.
 
 `RAILS_MASTER_KEY` is the other way to supply the cookie secret, but only after you create encrypted credentials with `bin/rails credentials:edit`. This milestone does not commit a master key or a credentials file. Use `SECRET_KEY_BASE`.
 

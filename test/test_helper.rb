@@ -1,4 +1,6 @@
 ENV["RAILS_ENV"] ||= "test"
+ENV["OWNER_USERNAME"] ||= "swatch"
+ENV["OWNER_PASSWORD"] ||= "swatch"
 require_relative "../config/environment"
 require "rails/test_help"
 
@@ -11,5 +13,15 @@ module ActiveSupport
     fixtures :all
 
     # Add more helper methods to be used by all tests here...
+  end
+end
+
+module ActionDispatch
+  class IntegrationTest
+    def owner_headers(username = ENV.fetch("OWNER_USERNAME"), password = ENV.fetch("OWNER_PASSWORD"))
+      {
+        "Authorization" => ActionController::HttpAuthentication::Basic.encode_credentials(username, password)
+      }
+    end
   end
 end

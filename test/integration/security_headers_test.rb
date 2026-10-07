@@ -2,7 +2,7 @@ require "test_helper"
 
 class SecurityHeadersTest < ActionDispatch::IntegrationTest
   test "responses deny framing and send a content security policy" do
-    get root_path
+    get root_path, headers: owner_headers
 
     assert_response :success
     assert_equal "DENY", response.headers["X-Frame-Options"]

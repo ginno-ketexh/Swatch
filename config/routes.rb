@@ -7,5 +7,15 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
+  namespace :api do
+    namespace :v1 do
+      resources :items, only: %i[index show create update destroy]
+    end
+  end
+
+  # The React router owns these URLs. A refresh or a pasted link still
+  # has to reach the same HTML shell, behind the owner login.
   root "home#index"
+  get "items/new", to: "home#index"
+  get "items/:id/edit", to: "home#index", constraints: { id: /\d+/ }
 end
