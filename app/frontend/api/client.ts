@@ -16,6 +16,15 @@ function csrfToken(): string {
   return document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? "";
 }
 
+// A page opened as http://name:password@host still has those credentials in
+// its address. A relative fetch then throws in the browser. Build an
+// absolute URL from the origin, which does not include the password.
+function resolveUrl(path: string): string {
+  const origin = window.location.origin;
+  if (!origin || origin === "null") return path;
+  return new URL(path, origin).href;
+}
+
 function readFieldErrors(value: unknown): FieldErrors {
   if (!value || typeof value !== "object") return {};
 
@@ -56,7 +65,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     headers.set("X-CSRF-Token", csrfToken());
   }
 
-  const response = await fetch(path, {
+  const response = await fetch(resolveUrl(path), {
     ...init,
     headers,
     credentials: "include",
