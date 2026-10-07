@@ -5,7 +5,7 @@ This is the list of Swatch milestones. Status lives in this file.
 | Milestone | Name | Status |
 | --- | --- | --- |
 | M1 | Blank App Deployment | Done |
-| M2 | Save & List Items | Not started |
+| M2 | Save & List Items | Done |
 | M3 | Interactive React Screen | Not started |
 | M4 | Search, Tags & Filters | Not started |
 | M5 | User Authentication & Authorization | Not started |
@@ -26,3 +26,18 @@ Done. Merged in pull request #1 on 2026-10-07.
 | M1-06 | Plain-language explainer | Not started |
 
 M1-06 is a plain-language explainer. It is written separately and was not part of pull request #1.
+
+## M2 — Save & List Items
+
+Done. Merged in pull request #9 on 2026-10-07. The live site is https://swatch-kr01.onrender.com.
+
+| Story | Name | Status |
+| --- | --- | --- |
+| M2-01 | Item record | Done |
+| M2-02 | JSON API | Done |
+| M2-03 | List page | Done |
+| M2-04 | Add and edit form | Done |
+| M2-05 | Delete with confirmation | Done |
+| M2-06 | Plain-language explainer | Not started |
+
+M2-06 is a plain-language explainer. It is written separately and was not part of pull request #9.
