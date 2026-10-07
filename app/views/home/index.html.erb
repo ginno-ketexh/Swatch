@@ -1,0 +1,13 @@
+<%# Fallback for the moment before React runs. Keep the words in step with
+    app/frontend/components/Home.tsx. Colors and type come from the design
+    tokens in app/frontend/entrypoints/application.css. %>
+<div id="root" data-version="<%= Swatch::VERSION %>">
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="border-b border-accent px-6 py-5">
+    <p class="font-display text-2xl">Swatch</p>
+  </header>
+  <main id="main" class="mx-auto max-w-3xl px-6 py-16">
+    <h1 class="font-display text-5xl">Swatch</h1>
+    <p class="mt-4 text-lg">Version <%= Swatch::VERSION %></p>
+  </main>
+</div>

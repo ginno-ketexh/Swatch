@@ -1,0 +1,38 @@
+# PostgreSQL for every environment.
+#
+# Development and test talk to a local server as your OS user (no password)
+# unless POSTGRES_HOST is set. Docker Compose sets that variable; see the README.
+#
+# Production uses DATABASE_URL from the host (Render). Do not put a
+# production password in this file.
+
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  # At least as many connections as Puma threads (config/puma.rb).
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 3 } %>
+
+development:
+  <<: *default
+  database: swatch_development
+<% if ENV["POSTGRES_HOST"].to_s != "" %>
+  host: <%= ENV["POSTGRES_HOST"] %>
+  port: <%= ENV.fetch("POSTGRES_PORT", 5432) %>
+  username: <%= ENV["POSTGRES_USER"] %>
+  password: <%= ENV["POSTGRES_PASSWORD"] %>
+<% end %>
+
+# The test database is wiped and recreated by the test suite.
+test:
+  <<: *default
+  database: swatch_test
+<% if ENV["POSTGRES_HOST"].to_s != "" %>
+  host: <%= ENV["POSTGRES_HOST"] %>
+  port: <%= ENV.fetch("POSTGRES_PORT", 5432) %>
+  username: <%= ENV["POSTGRES_USER"] %>
+  password: <%= ENV["POSTGRES_PASSWORD"] %>
+<% end %>
+
+production:
+  <<: *default
+  url: <%= ENV["DATABASE_URL"] %>
