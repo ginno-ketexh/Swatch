@@ -1,0 +1,21 @@
+# Local PostgreSQL only. The Rails app and Vite still run on your machine
+# via bin/dev. The password below is for this local container, not production.
+services:
+  db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: swatch
+      POSTGRES_PASSWORD: swatch
+      POSTGRES_DB: swatch_development
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U swatch -d swatch_development"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - swatch_postgres:/var/lib/postgresql/data
+
+volumes:
+  swatch_postgres:

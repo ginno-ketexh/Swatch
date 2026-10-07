@@ -1,0 +1,4 @@
+# web is listed first so Foreman's base port (3000, set in bin/dev) is Rails.
+# Vite uses the port in config/vite.json and ignores this assignment.
+web: bin/rails server
+vite: bin/vite dev

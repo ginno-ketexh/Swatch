@@ -1,0 +1,2 @@
+# No ignored advisories. Add a CVE here only when it does not apply to this app.
+ignore: []

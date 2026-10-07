@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+/* Scan the React components and the Rails templates for class names. */
+@source "../components/**/*.{tsx,ts}";
+@source "../../views/**/*.erb";
+
+/*
+  Design tokens. Components use Tailwind utilities (bg-canvas, font-display)
+  that point at these variables. Do not put hex colors or font names in
+  components or templates.
+*/
+:root {
+  --swatch-color-canvas: #f4f0e6;
+  --swatch-color-ink: #1c1915;
+  --swatch-color-muted: #3d3832;
+  --swatch-color-accent: #7c2d24;
+  --swatch-font-sans: "Avenir Next", "Segoe UI", sans-serif;
+  --swatch-font-display: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-canvas: var(--swatch-color-canvas);
+  --color-ink: var(--swatch-color-ink);
+  --color-muted: var(--swatch-color-muted);
+  --color-accent: var(--swatch-color-accent);
+  --font-sans: var(--swatch-font-sans);
+  --font-display: var(--swatch-font-display);
+}
+
+body {
+  margin: 0;
+  background: var(--swatch-color-canvas);
+  color: var(--swatch-color-ink);
+  font-family: var(--swatch-font-sans);
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  transform: translateY(-200%);
+  background: var(--swatch-color-canvas);
+  color: var(--swatch-color-ink);
+  padding: 0.5rem 0.75rem;
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--swatch-color-accent);
+  outline-offset: 2px;
+}

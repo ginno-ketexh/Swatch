@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+# Starts Rails and the Vite dev server together. This is the one command
+# that runs the app locally after bin/setup has prepared the database.
+
+require "fileutils"
+
+APP_ROOT = File.expand_path("..", __dir__)
+
+FileUtils.chdir APP_ROOT do
+  # -p 3000 is the Rails port. Foreman's default is 5000, which would
+  # disagree with the README and the Vite content-security-policy host.
+  exec "bundle", "exec", "foreman", "start", "-f", "Procfile.dev", "-p", "3000", *ARGV
+end
