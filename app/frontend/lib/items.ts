@@ -123,6 +123,10 @@ export function replaceItem(data: ItemCache | undefined, item: Item): ItemCache 
   };
 }
 
+export function findCachedItem(data: ItemCache | undefined, id: number): Item | undefined {
+  return data?.pages.flatMap((page) => page.items).find((item) => item.id === id);
+}
+
 export function removeItem(data: ItemCache | undefined, id: number): ItemCache | undefined {
   if (!data) return data;
   return {

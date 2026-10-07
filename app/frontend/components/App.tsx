@@ -1,9 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { createBrowserRouter, RouterProvider, type RouteObject } from "react-router-dom";
+import { DetailPanel } from "./DetailPanel";
 import { ItemForm } from "./ItemForm";
 import { LibraryPage } from "./LibraryPage";
 import { Shell } from "./Shell";
+import { ToastProvider } from "./Toasts";
 
 export function makeQueryClient(): QueryClient {
   return new QueryClient({
@@ -20,7 +22,13 @@ export function appRoutes(version: string): RouteObject[] {
       path: "/",
       element: <Shell version={version} />,
       children: [
-        { index: true, element: <LibraryPage /> },
+        {
+          element: <LibraryPage />,
+          children: [
+            { index: true, element: null },
+            { path: "items/:id", element: <DetailPanel /> },
+          ],
+        },
         { path: "items/new", element: <ItemForm /> },
         { path: "items/:id/edit", element: <ItemForm /> },
       ],
@@ -34,7 +42,9 @@ export function App({ version }: { version: string }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <ToastProvider>
+        <RouterProvider router={router} />
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

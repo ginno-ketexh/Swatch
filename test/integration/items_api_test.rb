@@ -174,6 +174,13 @@ class ItemsApiTest < ActionDispatch::IntegrationTest
     assert_select "#root[data-version=?]", Swatch::VERSION
   end
 
+  test "a swatch detail path serves the app shell" do
+    get "/items/4", headers: owner_headers
+
+    assert_response :success
+    assert_select "#root[data-version=?]", Swatch::VERSION
+  end
+
   private
     def with_forgery_protection
       previous = ActionController::Base.allow_forgery_protection

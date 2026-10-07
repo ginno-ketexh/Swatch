@@ -6,7 +6,7 @@ This is the list of Swatch milestones. Status lives in this file.
 | --- | --- | --- |
 | M1 | Blank App Deployment | Done |
 | M2 | Save & List Items | Done |
-| M3 | Interactive React Screen | Not started |
+| M3 | Interactive React Screen | In Progress (PR open) |
 | M4 | Search, Tags & Filters | Not started |
 | M5 | User Authentication & Authorization | Not started |
 | M6 | Image Uploads | Not started |
@@ -41,3 +41,15 @@ Done. Merged in pull request #9 on 2026-10-07. The live site is https://swatch-k
 | M2-06 | Plain-language explainer | Not started |
 
 M2-06 is a plain-language explainer. It is written separately and was not part of pull request #9.
+
+## M3 — Interactive React Screen
+
+In Progress (PR open).
+
+| Story | Name | Status |
+| --- | --- | --- |
+| M3-01 | Detail side panel | In Progress (PR open) |
+| M3-02 | Grid / list view toggle | In Progress (PR open) |
+| M3-03 | Quick edit in place | In Progress (PR open) |
+| M3-04 | Keyboard navigation | In Progress (PR open) |
+| M3-05 | Smooth feedback | In Progress (PR open) |

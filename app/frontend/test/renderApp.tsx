@@ -2,6 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { appRoutes, makeQueryClient } from "../components/App";
+import { ToastProvider } from "../components/Toasts";
 
 export function renderApp(path: string) {
   const queryClient = makeQueryClient();
@@ -12,7 +13,9 @@ export function renderApp(path: string) {
     router,
     ...render(
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
+        <ToastProvider>
+          <RouterProvider router={router} />
+        </ToastProvider>
       </QueryClientProvider>,
     ),
   };
