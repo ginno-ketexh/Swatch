@@ -36,12 +36,12 @@ class Session < ApplicationRecord
     end
     system = if agent.include?("Windows")
       "Windows"
-    elsif agent.include?("Mac OS") || agent.include?("Macintosh")
-      "macOS"
-    elsif agent.include?("Android")
-      "Android"
     elsif agent.include?("iPhone") || agent.include?("iPad")
       "iOS"
+    elsif agent.include?("Android")
+      "Android"
+    elsif agent.include?("Mac OS") || agent.include?("Macintosh")
+      "macOS"
     elsif agent.include?("Linux")
       "Linux"
     else

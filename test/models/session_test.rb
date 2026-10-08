@@ -36,5 +36,8 @@ class SessionTest < ActiveSupport::TestCase
 
     edge = Session.new(user_agent: "Mozilla/5.0 (Windows NT 10.0) Edg/120.0 Chrome/120.0")
     assert_equal "Edge on Windows", edge.device_label
+
+    iphone = Session.new(user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/604.1")
+    assert_equal "Safari on iOS", iphone.device_label
   end
 end
