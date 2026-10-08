@@ -66,7 +66,23 @@ class OwnerBootstrapTest < ActiveSupport::TestCase
     assert_not_includes @log.string, "Owner account created"
   end
 
-  test "backfill assigns rows and merges a duplicate tag" do
+  test "an existing owner needs no owner settings" do
+    digest = users(:owner).password_digest
+    item = Item.create!(title: "Kept lamp", user: users(:owner))
+    tag = Tag.create!(name: "kept", user: users(:owner))
+
+    assert OwnerBootstrap.call!(env: {}, logger: @logger)
+
+    assert_equal digest, users(:owner).reload.password_digest
+    assert_equal users(:owner).id, item.reload.user_id
+    assert_equal users(:owner).id, tag.reload.user_id
+    assert_not_includes @log.string, "Owner account created"
+    assert_not_includes @log.string, "OWNER_EMAIL"
+    assert_not_includes @log.string, "OWNER_PASSWORD"
+  end
+
+  test "backfill assigns rows and merges a duplicate tag when the column is still optional" do
+    relax_owner_requirement!
     owner = users(:owner)
     item = Item.create!(title: "Old lamp", user: owner)
     other_item = Item.create!(title: "Loose", user: owner)
@@ -88,6 +104,8 @@ class OwnerBootstrapTest < ActiveSupport::TestCase
     assert_equal owner.id, loose.reload.user_id
     assert_not Tag.exists?(orphan.id)
     assert_equal [ keeper.id ], item.tags.reload.map(&:id)
+  ensure
+    restore_required_owner!
   end
 
   test "a new password replaces the old one and signs out every device" do
@@ -169,6 +187,30 @@ class OwnerBootstrapTest < ActiveSupport::TestCase
   end
 
   private
+    def relax_owner_requirement!
+      connection = ActiveRecord::Base.connection
+      connection.change_column_null(:items, :user_id, true)
+      connection.change_column_null(:tags, :user_id, true)
+      Item.reset_column_information
+      Tag.reset_column_information
+    end
+
+    def restore_required_owner!
+      connection = ActiveRecord::Base.connection
+      connection.execute(<<~SQL.squish)
+        DELETE FROM item_tags
+        WHERE tag_id IN (SELECT id FROM tags WHERE user_id IS NULL)
+           OR item_id IN (SELECT id FROM items WHERE user_id IS NULL)
+      SQL
+      connection.execute("DELETE FROM tags WHERE user_id IS NULL")
+      connection.execute("DELETE FROM items WHERE user_id IS NULL")
+      connection.change_column_null(:items, :user_id, false)
+      connection.change_column_null(:tags, :user_id, false)
+    ensure
+      Item.reset_column_information
+      Tag.reset_column_information
+    end
+
     def clear_library!
       ItemTag.delete_all
       Item.delete_all

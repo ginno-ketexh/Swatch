@@ -24,8 +24,9 @@ bundle exec rails assets:clean
 # version goes live. See docs/DEPLOY_RENDER.md for the free-plan limit.
 bundle exec rails db:migrate
 
-# Create the first owner and attach existing swatches. This has to run
-# in the build because the free plan has no console. If OWNER_EMAIL or
-# OWNER_PASSWORD is missing or invalid, the build fails and Render keeps
-# the previous version live, so the old sign-in pop-up still works.
+# The owner account already exists, so this does not need OWNER_EMAIL,
+# OWNER_PASSWORD, or OWNER_USERNAME. Set OWNER_NEW_PASSWORD only to
+# replace a forgotten password. The migration above stops the build,
+# and changes nothing, if a swatch or tag still has no owner. Render
+# then keeps the previous version live.
 bundle exec rails swatch:bootstrap_owner
