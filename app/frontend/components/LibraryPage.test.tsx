@@ -47,7 +47,8 @@ describe("LibraryPage", () => {
 
   it("shows an error state and retries", async () => {
     let calls = 0;
-    stubFetch(() => {
+    stubFetch((url) => {
+      if (url.includes("/api/v1/tags")) return jsonResponse([]);
       calls += 1;
       if (calls === 1) return jsonResponse({ error: "nope" }, 500);
       return jsonResponse({ items: [], next_cursor: null });

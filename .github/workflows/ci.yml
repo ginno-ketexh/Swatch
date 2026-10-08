@@ -104,6 +104,11 @@ jobs:
         with:
           bundler-cache: true
 
+      - name: Build front-end assets for tests
+        env:
+          RAILS_ENV: test
+        run: bin/vite build
+
       - name: Run tests
         env:
           RAILS_ENV: test

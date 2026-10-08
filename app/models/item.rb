@@ -1,4 +1,7 @@
 class Item < ApplicationRecord
+  has_many :item_tags
+  has_many :tags, through: :item_tags
+
   before_validation :normalize_fields
 
   validates :title, presence: true, length: { maximum: 120 }
@@ -24,8 +27,30 @@ class Item < ApplicationRecord
       source_domain: source_domain,
       notes: notes,
       color: color,
-      created_at: created_at.iso8601
+      created_at: created_at.iso8601,
+      tags: tags.sort_by { |tag| tag.name.downcase }.map { |tag| { id: tag.id, name: tag.name } }
     }
+  end
+
+  def replace_tag_names(raw_names)
+    names = Array(raw_names).map { |name| Tag.normalize_name(name) }.reject(&:blank?)
+    names = names.uniq { |name| name.downcase }
+    if names.size > 10
+      errors.add(:tags, "can have at most 10 tags")
+      return false
+    end
+
+    records = names.map { |name| Tag.find_or_create_by_name!(name) }
+    invalid = records.select { |tag| tag.errors.any? }
+    if invalid.any?
+      invalid.each do |tag|
+        tag.errors.each { |error| errors.add(:tags, error.message) }
+      end
+      return false
+    end
+
+    self.tags = records
+    true
   end
 
   private

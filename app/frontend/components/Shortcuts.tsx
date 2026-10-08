@@ -36,12 +36,20 @@ export function Shortcuts() {
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
-      if (event.key !== "n" && event.key !== "?") return;
+      if (event.key !== "n" && event.key !== "?" && event.key !== "/") return;
       if (typingTarget(event.target)) return;
 
       const dialog = event.target instanceof HTMLElement ? event.target.closest("dialog") : null;
       if (dialog && dialog.id !== "shortcuts-dialog") return;
       if (!shortcutsEnabled()) return;
+
+      if (event.key === "/") {
+        const search = document.getElementById("swatch-search");
+        if (!(search instanceof HTMLElement)) return;
+        event.preventDefault();
+        search.focus();
+        return;
+      }
 
       event.preventDefault();
       if (event.key === "n") {
@@ -110,6 +118,9 @@ export function Shortcuts() {
             <li>Enter opens the swatch you are on.</li>
             <li>
               <kbd>n</kbd> starts a new swatch.
+            </li>
+            <li>
+              <kbd>/</kbd> focuses the search.
             </li>
             <li>
               <kbd>?</kbd> opens this dialog.

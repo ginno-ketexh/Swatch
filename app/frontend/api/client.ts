@@ -1,4 +1,4 @@
-import type { FieldErrors, Item, ItemInput, ItemPage } from "./types";
+import type { FieldErrors, Item, ItemInput, ItemPage, TagSummary } from "./types";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -76,11 +76,41 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (await response.json()) as T;
 }
 
-export function listItems(cursor: string | null, signal?: AbortSignal): Promise<ItemPage> {
+export function listItems(
+  cursor: string | null,
+  options: { q?: string; tags?: string[]; sort?: string; signal?: AbortSignal } = {},
+): Promise<ItemPage> {
   const params = new URLSearchParams();
   if (cursor) params.set("cursor", cursor);
+  if (options.q) params.set("q", options.q);
+  for (const tag of options.tags ?? []) params.append("tags[]", tag);
+  if (options.sort && options.sort !== "newest") params.set("sort", options.sort);
   const query = params.toString();
-  return request<ItemPage>(`/api/v1/items${query ? `?${query}` : ""}`, { signal });
+  return request<ItemPage>(`/api/v1/items${query ? `?${query}` : ""}`, { signal: options.signal });
+}
+
+export async function listTags(signal?: AbortSignal): Promise<TagSummary[]> {
+  const body = await request<unknown>("/api/v1/tags", { signal });
+  if (!Array.isArray(body)) return [];
+  return body.flatMap((row) => {
+    if (!row || typeof row !== "object") return [];
+    const record = row as { id?: unknown; name?: unknown; items_count?: unknown };
+    if (typeof record.id !== "number" || typeof record.name !== "string") return [];
+    const itemsCount = typeof record.items_count === "number" ? record.items_count : 0;
+    return [{ id: record.id, name: record.name, items_count: itemsCount }];
+  });
+}
+
+export function updateTag(id: number, name: string, signal?: AbortSignal): Promise<TagSummary> {
+  return request<TagSummary>(`/api/v1/tags/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ tag: { name } }),
+    signal,
+  });
+}
+
+export function deleteTag(id: number, signal?: AbortSignal): Promise<void> {
+  return request<void>(`/api/v1/tags/${id}`, { method: "DELETE", signal });
 }
 
 export function getItem(id: string, signal?: AbortSignal): Promise<Item> {
@@ -95,7 +125,7 @@ export function createItem(input: ItemInput, signal?: AbortSignal): Promise<Item
   });
 }
 
-export function updateItem(id: number, input: ItemInput, signal?: AbortSignal): Promise<Item> {
+export function updateItem(id: number, input: Partial<ItemInput>, signal?: AbortSignal): Promise<Item> {
   return request<Item>(`/api/v1/items/${id}`, {
     method: "PATCH",
     body: JSON.stringify({ item: input }),

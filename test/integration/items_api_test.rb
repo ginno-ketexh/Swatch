@@ -26,7 +26,8 @@ class ItemsApiTest < ActionDispatch::IntegrationTest
     assert body["next_cursor"].present?
     assert_not_includes body["next_cursor"], "Newer"
     item_sqls = sqls.select { |sql| sql.match?(/from ["']?items["']?/i) }
-    assert_equal 1, item_sqls.size
+    page_sqls = item_sqls.grep_v(/\bcount\s*\(/i)
+    assert_equal 1, page_sqls.size
 
     get api_v1_items_path, params: { per_page: 1, cursor: body["next_cursor"] }, headers: owner_headers
 

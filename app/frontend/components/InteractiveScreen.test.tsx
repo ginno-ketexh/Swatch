@@ -115,6 +115,7 @@ describe("Interactive screen", () => {
   it("switches between grid and list without another request", async () => {
     let calls = 0;
     stubFetch((url, init) => {
+      if (url.includes("/api/v1/tags")) return jsonResponse([]);
       calls += 1;
       return libraryResponse([sample])(url, init);
     });
