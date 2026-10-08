@@ -6,6 +6,25 @@ local:
   service: Disk
   root: <%= Rails.root.join("storage") %>
 
+# Cloudflare R2. The app does not open a connection while booting.
+# Checksums stay "when_required" or R2 rejects the upload.
+r2:
+  service: S3
+  access_key_id: <%= ENV["R2_ACCESS_KEY_ID"] %>
+  secret_access_key: <%= ENV["R2_SECRET_ACCESS_KEY"] %>
+  region: auto
+  bucket: <%= ENV["R2_BUCKET"] %>
+  endpoint: https://<%= ENV["R2_ACCOUNT_ID"].to_s.gsub(/[^A-Za-z0-9]/, "") %>.r2.cloudflarestorage.com
+  force_path_style: true
+  request_checksum_calculation: "when_required"
+  response_checksum_validation: "when_required"
+
+# Production uses this only when the R2 settings are missing.
+# It refuses to store a file, and it is not a Disk service.
+# Both names are quoted: YAML would otherwise read them as booleans.
+"off":
+  service: "Off"
+
 # Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:
 #   service: S3

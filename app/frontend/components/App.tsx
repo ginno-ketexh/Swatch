@@ -6,6 +6,7 @@ import { ItemForm } from "./ItemForm";
 import { LibraryPage } from "./LibraryPage";
 import { ManageTagsPage } from "./ManageTagsPage";
 import { Shell } from "./Shell";
+import { ImagesEnabledProvider } from "../lib/imagesEnabled";
 import { ToastProvider } from "./Toasts";
 
 export function makeQueryClient(): QueryClient {
@@ -38,15 +39,17 @@ export function appRoutes(version: string, email: string): RouteObject[] {
   ];
 }
 
-export function App({ version, email }: { version: string; email: string }) {
+export function App({ version, email, imagesEnabled }: { version: string; email: string; imagesEnabled: boolean }) {
   const [queryClient] = useState(makeQueryClient);
   const [router] = useState(() => createBrowserRouter(appRoutes(version, email)));
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <RouterProvider router={router} />
-      </ToastProvider>
+      <ImagesEnabledProvider enabled={imagesEnabled}>
+        <ToastProvider>
+          <RouterProvider router={router} />
+        </ToastProvider>
+      </ImagesEnabledProvider>
     </QueryClientProvider>
   );
 }

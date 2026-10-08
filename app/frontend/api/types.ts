@@ -7,6 +7,16 @@ export type TagSummary = TagRef & {
   items_count: number;
 };
 
+export type ItemImage = {
+  alt: string | null;
+  width: number | null;
+  height: number | null;
+  content_type: string;
+  byte_size: number;
+  version: number;
+  urls: { card: string; card_2x: string; large: string };
+};
+
 export type Item = {
   id: number;
   title: string;
@@ -16,6 +26,7 @@ export type Item = {
   color: string | null;
   created_at: string;
   tags?: TagRef[];
+  image?: ItemImage | null;
 };
 
 export type ItemInput = {

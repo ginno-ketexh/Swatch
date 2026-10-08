@@ -13,7 +13,12 @@ Rails.application.configure do
     policy.default_src :self
     policy.base_uri :self
     policy.font_src :self
-    policy.img_src :self, :data
+    image_sources = [ :self, :data, "blob:" ]
+    account_id = ENV["R2_ACCOUNT_ID"].to_s
+    if account_id.match?(/\A[A-Za-z0-9]+\z/)
+      image_sources << "https://#{account_id}.r2.cloudflarestorage.com"
+    end
+    policy.img_src(*image_sources)
     policy.object_src :none
     policy.script_src :self
     policy.style_src :self

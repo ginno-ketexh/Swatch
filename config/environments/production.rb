@@ -21,8 +21,9 @@ Rails.application.configure do
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"
 
-  # Store uploaded files on the local file system (see config/storage.yml for options).
-  config.active_storage.service = :local
+  # The storage service is chosen in config/initializers/active_storage.rb,
+  # after autoloading is ready. Production uses R2, or a service that
+  # refuses files. It never uses Disk.
 
   # Render terminates HTTPS and forwards HTTP. Treat those requests as HTTPS.
   config.assume_ssl = true

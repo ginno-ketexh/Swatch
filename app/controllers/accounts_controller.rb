@@ -10,6 +10,7 @@ class AccountsController < ApplicationController
 
   def show
     load_sessions
+    @image_usage = Swatch::ImageStorage.usage_label(Current.user)
   end
 
   def update_password

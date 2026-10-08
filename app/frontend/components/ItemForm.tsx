@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useImagesEnabled } from "../lib/imagesEnabled";
 import { Link, useBlocker, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ApiError, createItem, getItem, updateItem } from "../api/client";
 import type { ItemInput } from "../api/types";
@@ -16,6 +17,7 @@ import {
   validateItem,
 } from "../lib/items";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { ImageField, type ImageFieldHandle } from "./ImageField";
 import { TagCombobox } from "./TagCombobox";
 
 function usePoliteCount(value: string, max: number): string {
@@ -47,6 +49,10 @@ export function ItemForm() {
   const summaryRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const allowLeave = useRef(false);
+  const imageRef = useRef<ImageFieldHandle>(null);
+  const imagesEnabled = useImagesEnabled();
+  const [imageDirty, setImageDirty] = useState(false);
+  const [savedId, setSavedId] = useState<number | null>(editing ? Number(id) : null);
   const [values, setValues] = useState<ItemInput>(emptyItem);
   const [baseline, setBaseline] = useState<ItemInput>(emptyItem);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -70,7 +76,7 @@ export function ItemForm() {
     setBaseline(next);
   }
 
-  const dirty = JSON.stringify(values) !== JSON.stringify(baseline);
+  const dirty = JSON.stringify(values) !== JSON.stringify(baseline) || imageDirty;
   const blocker = useBlocker(({ currentLocation, nextLocation }) => {
     if (allowLeave.current) return false;
     return dirty && currentLocation.pathname !== nextLocation.pathname;
@@ -114,7 +120,15 @@ export function ItemForm() {
       setSummary(error instanceof ApiError ? error.message : "Could not save this swatch. Nothing was changed.");
       setErrorNonce((nonce) => nonce + 1);
     },
-    onSuccess: () => {
+    onSuccess: async (saved) => {
+      setSavedId(saved.id);
+      try {
+        await imageRef.current?.uploadTo(saved.id);
+      } catch {
+        setSummary("The swatch was saved, but the image was not. Use Retry.");
+        setErrorNonce((nonce) => nonce + 1);
+        return;
+      }
       allowLeave.current = true;
       navigate("/");
     },
@@ -194,7 +208,7 @@ export function ItemForm() {
           ) : null}
         </div>
       ) : null}
-      <form className="mt-6 flex flex-col gap-6" noValidate onSubmit={onSubmit}>
+      <form className="mt-6 flex flex-col gap-6" data-image-scope="" noValidate onSubmit={onSubmit}>
         <div>
           <label className="block" htmlFor={`${formId}-title`}>
             Title <span>(required)</span>
@@ -311,6 +325,20 @@ export function ItemForm() {
             </p>
           ) : null}
         </div>
+
+        <ImageField
+          ref={imageRef}
+          enabled={imagesEnabled}
+          item={existing.data ?? null}
+          itemId={savedId}
+          itemTitle={values.title || "this swatch"}
+          onChange={(saved) => {
+            queryClient.setQueryData(["item", String(saved.id)], saved);
+            updateItemCaches(queryClient, (current) => replaceItem(current, saved));
+          }}
+          onDirty={setImageDirty}
+          onSuggestColor={(hex) => setValues((current) => ({ ...current, color: hex }))}
+        />
 
         <TagCombobox
           id={`${formId}-tags`}

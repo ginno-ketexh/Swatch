@@ -70,13 +70,30 @@ Once an owner account exists, the build does not need `OWNER_EMAIL`, `OWNER_PASS
 - The free web service **sleeps after about 15 minutes** with no visitors. The next visit wakes it up and can take half a minute or so. `/up` is how Render knows it woke up healthy.
 - The free service has little memory (512 MB). The Blueprint sets one Puma process (`WEB_CONCURRENCY=1`) so it does not run out of memory on boot.
 - The free database **expires 30 days** after you create it. You then have about 14 days to upgrade it to a paid plan. After that grace period, Render deletes the database and everything in it. There are no backups on the free database, and storage is capped (1 GB). Fine for learning. Not a place to keep a library you care about.
-- Free web services have an ephemeral disk. Uploaded files on the instance disappear on the next deploy. This milestone does not store uploads yet.
+- Free web services have an ephemeral disk. Anything written on the instance disappears on the next deploy, restart, or sleep. Swatch pictures do not live on that disk. They live in Cloudflare R2, which is described below. Until those settings exist, the site still runs and simply says image uploads are not set up yet.
 
 ## This deploy
 
 You do not need to change anything on Render. The owner account is already there. A normal deploy does not read `OWNER_EMAIL`, `OWNER_PASSWORD`, or `OWNER_USERNAME`.
 
 If the deploy log says it is refusing to require an owner, a swatch or tag has no owner. Nothing was deleted. The site you have now stays up. Do not delete rows by hand to force it through.
+
+## Image storage (Cloudflare R2)
+
+Pictures are optional. The app boots and `/up` stays OK when the four settings below are missing. The library works as before, and the image area says uploads are not set up yet. Nothing is written to Render's disk.
+
+Add the settings yourself on the existing Render service. Putting them in `render.yaml` with `sync: false` does not update a Blueprint that is already applied. Render ignores new keys of that kind, so the dashboard is the place to add them.
+
+1. Cloudflare dashboard → **R2 Object Storage**. The first time, Cloudflare may ask you to turn R2 on and add a payment method. The free tier still applies: 10 GB of storage, 1 million writes and 10 million reads a month, and free downloads.
+2. **Create bucket** named `swatch-images`. Leave the location on Automatic and the storage class on Standard. Do not turn on public access, the `r2.dev` address, or a custom domain. The bucket stays private.
+3. R2 → **Manage API tokens → Create API token**. Permission **Object Read & Write**, and only the bucket `swatch-images`. Copy the **Access Key ID** and the **Secret Access Key** into your password manager. The secret is shown once. Do not paste it into chat, email, or GitHub.
+4. Copy the **Account ID** from the R2 overview page.
+5. Render → the swatch service → **Environment**. Add `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET` (the value is `swatch-images`). Choose **Save, rebuild, and deploy**.
+6. No CORS rules are needed. The browser sends the picture to Swatch, and Swatch stores it.
+7. After that deploy: open a swatch, add a photo, and refresh. It should still be there. Then use **Manual Deploy → Deploy latest commit**. When it finishes, the photo should still be there. That shows it is not sitting on Render's temporary disk.
+8. Optional: open the bucket's Metrics page now and then to see how much space you are using.
+
+The account page shows how much of the 2 GB image allowance is in use. Names of missing settings can appear in the deploy log. The values never do.
 
 ## If you forget your password
 
