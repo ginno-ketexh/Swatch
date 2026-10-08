@@ -1,4 +1,5 @@
-import type { Item, ItemInput } from "../api/types";
+import type { QueryClient } from "@tanstack/react-query";
+import type { Item, ItemInput, TagRef } from "../api/types";
 
 export const itemsKey = ["items"] as const;
 
@@ -8,7 +9,7 @@ export type ItemCache = {
 };
 
 export function emptyItem(): ItemInput {
-  return { title: "", source_url: "", notes: "", color: "" };
+  return { title: "", source_url: "", notes: "", color: "", tag_names: [] };
 }
 
 export function itemToInput(item: Item): ItemInput {
@@ -18,6 +19,20 @@ export function itemToInput(item: Item): ItemInput {
     notes: item.notes ?? "",
     color: item.color ?? "",
   };
+}
+
+export function itemToFormInput(item: Item): ItemInput {
+  return {
+    ...itemToInput(item),
+    tag_names: (item.tags ?? []).map((tag) => tag.name),
+  };
+}
+
+export function tagsFromNames(names: string[], previous: TagRef[] = []): TagRef[] {
+  return names.map((name, index) => {
+    const found = previous.find((tag) => tag.name.toLowerCase() === name.toLowerCase());
+    return found ?? { id: -(index + 1), name };
+  });
 }
 
 export function normalizeUrl(value: string): string | null {
@@ -127,6 +142,26 @@ export function findCachedItem(data: ItemCache | undefined, id: number): Item | 
   return data?.pages.flatMap((page) => page.items).find((item) => item.id === id);
 }
 
+export function snapshotItemCaches(client: QueryClient) {
+  return client.getQueriesData<ItemCache>({ queryKey: itemsKey });
+}
+
+export function restoreItemCaches(client: QueryClient, snapshot: ReturnType<typeof snapshotItemCaches>) {
+  for (const [key, data] of snapshot) client.setQueryData(key, data);
+}
+
+export function updateItemCaches(client: QueryClient, recipe: (current: ItemCache | undefined) => ItemCache | undefined) {
+  client.setQueriesData<ItemCache>({ queryKey: itemsKey }, (current) => recipe(current));
+}
+
+export function findCachedItemIn(client: QueryClient, id: number): Item | undefined {
+  for (const [, data] of client.getQueriesData<ItemCache>({ queryKey: itemsKey })) {
+    const found = findCachedItem(data, id);
+    if (found) return found;
+  }
+  return undefined;
+}
+
 export function removeItem(data: ItemCache | undefined, id: number): ItemCache | undefined {
   if (!data) return data;
   return {
@@ -149,5 +184,6 @@ export function optimisticItem(input: ItemInput, id = -Date.now()): Item {
     notes: notes || null,
     color: normalizeColor(input.color),
     created_at: new Date().toISOString(),
+    tags: input.tag_names ? tagsFromNames(input.tag_names) : [],
   };
 }

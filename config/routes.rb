@@ -10,12 +10,14 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resources :items, only: %i[index show create update destroy]
+      resources :tags, only: %i[index update destroy]
     end
   end
 
   # The React router owns these URLs. A refresh or a pasted link still
   # has to reach the same HTML shell, behind the owner login.
   root "home#index"
+  get "tags", to: "home#index"
   get "items/new", to: "home#index"
   get "items/:id/edit", to: "home#index", constraints: { id: /\d+/ }
   get "items/:id", to: "home#index", constraints: { id: /\d+/ }

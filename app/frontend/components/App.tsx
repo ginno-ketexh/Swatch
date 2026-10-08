@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider, type RouteObject } from "react-rou
 import { DetailPanel } from "./DetailPanel";
 import { ItemForm } from "./ItemForm";
 import { LibraryPage } from "./LibraryPage";
+import { ManageTagsPage } from "./ManageTagsPage";
 import { Shell } from "./Shell";
 import { ToastProvider } from "./Toasts";
 
@@ -29,6 +30,7 @@ export function appRoutes(version: string): RouteObject[] {
             { path: "items/:id", element: <DetailPanel /> },
           ],
         },
+        { path: "tags", element: <ManageTagsPage /> },
         { path: "items/new", element: <ItemForm /> },
         { path: "items/:id/edit", element: <ItemForm /> },
       ],

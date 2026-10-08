@@ -5,17 +5,21 @@ import { ApiError, getItem, updateItem } from "../api/client";
 import type { Item, ItemInput } from "../api/types";
 import { hideDialog, showDialog, trapTab } from "../lib/dialog";
 import {
-  findCachedItem,
+  findCachedItemIn,
   itemToInput,
   itemsKey,
   normalizeColor,
   normalizeUrl,
   replaceItem,
+  restoreItemCaches,
   savedLabel,
+  snapshotItemCaches,
   sourceDomain,
+  tagsFromNames,
+  updateItemCaches,
   validateItem,
-  type ItemCache,
 } from "../lib/items";
+import { TagCombobox } from "./TagCombobox";
 import { ToastViewport, useToast } from "./Toasts";
 
 function pickerColor(color: string): string {
@@ -66,9 +70,7 @@ export function DetailPanel() {
   const [editingColor, setEditingColor] = useState(false);
   const [colorDraft, setColorDraft] = useState("");
 
-  const cached = Number.isInteger(numericId)
-    ? findCachedItem(queryClient.getQueryData<ItemCache>(itemsKey), numericId)
-    : undefined;
+  const cached = Number.isInteger(numericId) ? findCachedItemIn(queryClient, numericId) : undefined;
 
   const detail = useQuery({
     queryKey: ["item", id],
@@ -82,27 +84,55 @@ export function DetailPanel() {
 
   const save = useMutation({
     mutationFn: ({ itemId, input }: { itemId: number; input: ItemInput; previous: Item }) => updateItem(itemId, input),
-    onMutate: async ({ itemId, input, previous }) => {
+    onMutate: async ({ input, previous }) => {
       await queryClient.cancelQueries({ queryKey: itemsKey });
       await queryClient.cancelQueries({ queryKey: ["item", id] });
-      const previousList = queryClient.getQueryData<ItemCache>(itemsKey);
+      const previousLists = snapshotItemCaches(queryClient);
       const previousItem = queryClient.getQueryData<Item>(["item", id]) ?? previous;
       const optimistic = applyInput(previous, input);
-      queryClient.setQueryData<ItemCache>(itemsKey, (current) => replaceItem(current, optimistic));
+      updateItemCaches(queryClient, (current) => replaceItem(current, optimistic));
       queryClient.setQueryData<Item>(["item", id], optimistic);
-      return { previousList, previousItem, itemId };
+      return { previousLists, previousItem };
     },
     onError: (error, _variables, context) => {
-      if (context?.previousList) queryClient.setQueryData(itemsKey, context.previousList);
+      if (context?.previousLists) restoreItemCaches(queryClient, context.previousLists);
       if (context?.previousItem) queryClient.setQueryData(["item", id], context.previousItem);
       cancelEditors();
       toast.show(saveErrorMessage(error), "error");
     },
     onSuccess: (saved) => {
       queryClient.setQueryData<Item>(["item", id], saved);
-      queryClient.setQueryData<ItemCache>(itemsKey, (current) => replaceItem(current, saved));
+      updateItemCaches(queryClient, (current) => replaceItem(current, saved));
       cancelEditors();
       toast.show("Saved", "success");
+    },
+  });
+
+  const saveTags = useMutation({
+    mutationFn: ({ itemId, names }: { itemId: number; names: string[]; previous: Item }) => updateItem(itemId, { tag_names: names }),
+    onMutate: async ({ names, previous }) => {
+      await queryClient.cancelQueries({ queryKey: itemsKey });
+      await queryClient.cancelQueries({ queryKey: ["item", id] });
+      const previousLists = snapshotItemCaches(queryClient);
+      const previousItem = queryClient.getQueryData<Item>(["item", id]) ?? previous;
+      const optimistic = { ...previous, tags: tagsFromNames(names, previous.tags ?? []) };
+      updateItemCaches(queryClient, (current) => replaceItem(current, optimistic));
+      queryClient.setQueryData<Item>(["item", id], optimistic);
+      return { previousLists, previousItem };
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousLists) restoreItemCaches(queryClient, context.previousLists);
+      if (context?.previousItem) queryClient.setQueryData(["item", id], context.previousItem);
+      toast.show(saveErrorMessage(error), "error");
+    },
+    onSuccess: (saved) => {
+      queryClient.setQueryData<Item>(["item", id], saved);
+      updateItemCaches(queryClient, (current) => replaceItem(current, saved));
+      toast.show("Saved", "success");
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: itemsKey });
+      await queryClient.invalidateQueries({ queryKey: ["tags"] });
     },
   });
 
@@ -336,8 +366,18 @@ export function DetailPanel() {
           )}
           <p className="mt-2 text-muted">{savedLabel(item.created_at)}</p>
           {item.notes ? <p className="mt-4 break-words whitespace-pre-wrap">{item.notes}</p> : null}
+          <div className="mt-6">
+            <TagCombobox
+              id="detail-tags"
+              tags={(item.tags ?? []).map((tag) => tag.name)}
+              onChange={(names) => {
+                if (!item) return;
+                saveTags.mutate({ itemId: item.id, names, previous: item });
+              }}
+            />
+          </div>
           <p className="mt-6">
-            <Link className="min-h-11 underline" to={`/items/${item.id}/edit`}>
+            <Link className="min-h-11 underline" to={{ pathname: `/items/${item.id}/edit`, search: location.search }}>
               Edit all details
             </Link>
           </p>

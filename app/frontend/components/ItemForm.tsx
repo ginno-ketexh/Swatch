@@ -1,19 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { Link, useBlocker, useNavigate, useParams } from "react-router-dom";
+import { Link, useBlocker, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ApiError, createItem, getItem, updateItem } from "../api/client";
 import type { ItemInput } from "../api/types";
 import {
   emptyItem,
-  itemToInput,
+  itemToFormInput,
   itemsKey,
   optimisticItem,
   prependItem,
   replaceItem,
+  restoreItemCaches,
+  snapshotItemCaches,
+  updateItemCaches,
   validateItem,
-  type ItemCache,
 } from "../lib/items";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { TagCombobox } from "./TagCombobox";
 
 function usePoliteCount(value: string, max: number): string {
   const [announced, setAnnounced] = useState("");
@@ -38,6 +41,7 @@ export function ItemForm() {
   const { id } = useParams();
   const editing = id !== undefined;
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const formId = useId();
   const summaryRef = useRef<HTMLDivElement>(null);
@@ -60,7 +64,7 @@ export function ItemForm() {
 
   const [loadedId, setLoadedId] = useState<number | null>(null);
   if (existing.data && existing.data.id !== loadedId) {
-    const next = itemToInput(existing.data);
+    const next = itemToFormInput(existing.data);
     setLoadedId(existing.data.id);
     setValues(next);
     setBaseline(next);
@@ -91,15 +95,13 @@ export function ItemForm() {
     mutationFn: (input: ItemInput) => (editing && existing.data ? updateItem(existing.data.id, input) : createItem(input)),
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey: itemsKey });
-      const previous = queryClient.getQueryData<ItemCache>(itemsKey);
+      const previous = snapshotItemCaches(queryClient);
       const optimistic = optimisticItem(input, editing && existing.data ? existing.data.id : -Date.now());
-      queryClient.setQueryData<ItemCache>(itemsKey, (current) =>
-        editing ? replaceItem(current, optimistic) : prependItem(current, optimistic),
-      );
+      updateItemCaches(queryClient, (current) => (editing ? replaceItem(current, optimistic) : prependItem(current, optimistic)));
       return { previous };
     },
     onError: (error, _input, context) => {
-      if (context?.previous) queryClient.setQueryData(itemsKey, context.previous);
+      if (context?.previous) restoreItemCaches(queryClient, context.previous);
       else queryClient.removeQueries({ queryKey: itemsKey });
 
       if (error instanceof ApiError && Object.keys(error.fieldErrors).length > 0) {
@@ -118,6 +120,7 @@ export function ItemForm() {
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: itemsKey });
+      await queryClient.invalidateQueries({ queryKey: ["tags"] });
     },
   });
 
@@ -152,7 +155,7 @@ export function ItemForm() {
       <div role="alert">
         <h1 className="font-display text-4xl">{missing ? "This swatch is not in your library." : "Could not open this swatch."}</h1>
         <p className="mt-3">{missing ? "It may already have been removed." : "Try again from your library."}</p>
-        <Link className="mt-6 inline-block min-h-11 underline" to="/">
+        <Link className="mt-6 inline-block min-h-11 underline" to={{ pathname: "/", search: location.search }}>
           Back to library
         </Link>
       </div>
@@ -171,7 +174,7 @@ export function ItemForm() {
     <div>
       <h1 className="font-display text-4xl">{editing ? "Edit swatch" : "Add a swatch"}</h1>
       <p className="mt-3">
-        <Link className="underline" to="/">
+        <Link className="underline" to={{ pathname: "/", search: location.search }}>
           Back to library
         </Link>
       </p>
@@ -308,6 +311,12 @@ export function ItemForm() {
             </p>
           ) : null}
         </div>
+
+        <TagCombobox
+          id={`${formId}-tags`}
+          tags={values.tag_names ?? []}
+          onChange={(tagNames) => setValues({ ...values, tag_names: tagNames })}
+        />
 
         <div>
           <button type="submit" className="min-h-11 bg-ink px-4 py-2 text-canvas" disabled={save.isPending}>

@@ -1,4 +1,4 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { Shortcuts } from "./Shortcuts";
 
 type ShellProps = {
@@ -6,6 +6,8 @@ type ShellProps = {
 };
 
 export function Shell({ version }: ShellProps) {
+  const location = useLocation();
+
   return (
     <>
       <a className="skip-link" href="#main">
@@ -16,6 +18,9 @@ export function Shell({ version }: ShellProps) {
         <div className="flex flex-wrap items-center gap-4">
           <p>Version {version}</p>
           <Shortcuts />
+          <Link className="min-h-11 underline" to={{ pathname: "/tags", search: location.search }}>
+            Manage tags
+          </Link>
           <Link className="min-h-11 underline" to="/items/new">
             Add a swatch
           </Link>
