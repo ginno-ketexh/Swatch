@@ -38,3 +38,13 @@ services:
         value: "1"
       - key: RAILS_MAX_THREADS
         value: "3"
+      # Image storage. Add these four by hand on the Render service.
+      # A Blueprint that already exists ignores new sync: false keys in this file.
+      # - key: R2_ACCOUNT_ID
+      #   sync: false
+      # - key: R2_ACCESS_KEY_ID
+      #   sync: false
+      # - key: R2_SECRET_ACCESS_KEY
+      #   sync: false
+      # - key: R2_BUCKET
+      #   sync: false

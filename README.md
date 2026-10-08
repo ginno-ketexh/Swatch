@@ -1,6 +1,6 @@
 # Swatch
 
-Swatch is a personal design-inspiration library. You can save a title, a link, notes, and a colour, then browse them as cards. Image uploads and a public share page come in later milestones.
+Swatch is a personal design-inspiration library. You can save a title, a link, notes, a colour, and one picture, then browse them as cards. A public share page comes in a later milestone.
 
 The plan and where each milestone stands are in [MILESTONES.md](MILESTONES.md).
 

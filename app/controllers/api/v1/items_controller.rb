@@ -95,7 +95,7 @@ module Api
 
       private
         def set_item
-          @item = Current.user.items.preload(:tags).find(params[:id])
+          @item = Current.user.items.with_attached_image.preload(:tags).find(params[:id])
         end
 
         def item_params

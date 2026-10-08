@@ -7,6 +7,7 @@ import { collapseQuery, readFilters, withFilters, type LibraryFilters } from "..
 import { libraryView, writeStoredView, type LibraryView } from "../lib/libraryView";
 import { itemsKey, removeItem, restoreItemCaches, savedLabel, snapshotItemCaches, updateItemCaches } from "../lib/items";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { CoverImage } from "./CoverImage";
 import { LibraryToolbar } from "./LibraryToolbar";
 import { ToastViewport, useToast } from "./Toasts";
 
@@ -161,6 +162,12 @@ export function LibraryPage() {
     navigate({ pathname: `/items/${id}`, search: location.search });
   }
 
+  function eagerCover(view: LibraryView, index: number): boolean {
+    if (view === "list") return index === 0;
+    const wide = typeof window.matchMedia === "function" && window.matchMedia("(min-width: 40rem)").matches;
+    return index < (wide ? 2 : 1);
+  }
+
   function columnCount(): number {
     if (view === "list") return 1;
     const list = listRef.current;
@@ -260,6 +267,7 @@ export function LibraryPage() {
               const extra = names.length - shown.length;
               return (
                 <li key={item.id} data-card className="min-w-0 border border-line bg-surface p-4" onClick={(event) => onCardClick(event, item.id)}>
+                  <CoverImage item={item} view={view} eager={eagerCover(view, index)} />
                   <h2 className="break-words font-display text-2xl">
                     <button
                       id={`swatch-card-${item.id}`}

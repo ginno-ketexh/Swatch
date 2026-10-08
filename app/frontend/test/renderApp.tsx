@@ -2,9 +2,10 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { appRoutes, makeQueryClient } from "../components/App";
+import { ImagesEnabledProvider } from "../lib/imagesEnabled";
 import { ToastProvider } from "../components/Toasts";
 
-export function renderApp(path: string) {
+export function renderApp(path: string, options: { imagesEnabled?: boolean } = {}) {
   const queryClient = makeQueryClient();
   const router = createMemoryRouter(appRoutes("0.1.0", "owner@example.com"), { initialEntries: [path] });
 
@@ -13,9 +14,11 @@ export function renderApp(path: string) {
     router,
     ...render(
       <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          <RouterProvider router={router} />
-        </ToastProvider>
+        <ImagesEnabledProvider enabled={options.imagesEnabled ?? false}>
+          <ToastProvider>
+            <RouterProvider router={router} />
+          </ToastProvider>
+        </ImagesEnabledProvider>
       </QueryClientProvider>,
     ),
   };

@@ -146,3 +146,62 @@ export function updateItem(id: number, input: Partial<ItemInput>, signal?: Abort
 export function deleteItem(id: number, signal?: AbortSignal): Promise<void> {
   return request<void>(`/api/v1/items/${id}`, { method: "DELETE", signal });
 }
+
+export function updateImageAlt(id: number, alt: string): Promise<Item> {
+  return request<Item>(`/api/v1/items/${id}/image`, {
+    method: "PATCH",
+    body: JSON.stringify({ alt }),
+  });
+}
+
+export function deleteItemImage(id: number): Promise<void> {
+  return request<void>(`/api/v1/items/${id}/image`, { method: "DELETE" });
+}
+
+export function uploadItemImage(
+  itemId: number,
+  file: File,
+  alt: string,
+  onProgress: (percent: number) => void,
+  signal: AbortSignal,
+): Promise<Item> {
+  return new Promise((resolve, reject) => {
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      reject(new ApiError(0, {}, "You're offline"));
+      return;
+    }
+
+    const body = new FormData();
+    body.append("image", file);
+    body.append("alt", alt);
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", `/api/v1/items/${itemId}/image`);
+    xhr.setRequestHeader("Accept", "application/json");
+    xhr.setRequestHeader("X-CSRF-Token", csrfToken());
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable || event.total === 0) return;
+      onProgress(Math.round((event.loaded / event.total) * 100));
+    };
+    const abort = () => xhr.abort();
+    signal.addEventListener("abort", abort);
+    xhr.onload = () => {
+      signal.removeEventListener("abort", abort);
+      const response = new Response(xhr.responseText, { status: xhr.status, headers: { "Content-Type": "application/json" } });
+      if (xhr.status === 401) window.dispatchEvent(new Event("swatch:signed-out"));
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText) as Item);
+        return;
+      }
+      parseError(response).then(reject, reject);
+    };
+    xhr.onerror = () => {
+      signal.removeEventListener("abort", abort);
+      reject(new ApiError(0, {}, "The image could not be uploaded. Check your connection and try again."));
+    };
+    xhr.onabort = () => {
+      signal.removeEventListener("abort", abort);
+      reject(new ApiError(0, {}, "Upload cancelled"));
+    };
+    xhr.send(body);
+  });
+}

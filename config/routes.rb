@@ -19,7 +19,12 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
-      resources :items, only: %i[index show create update destroy]
+      resources :items, only: %i[index show create update destroy] do
+        get "image/:variant", to: "item_images#show", as: :image_variant, constraints: { variant: /card|card_2x|large/ }
+        put "image", to: "item_images#update"
+        patch "image", to: "item_images#update_alt"
+        delete "image", to: "item_images#destroy"
+      end
       resources :tags, only: %i[index update destroy]
     end
   end

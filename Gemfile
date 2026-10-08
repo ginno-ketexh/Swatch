@@ -18,6 +18,14 @@ gem "jbuilder"
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"
 
+# Private image storage on Cloudflare R2, which speaks the S3 API.
+# Loaded only when an upload or a presigned link is needed.
+gem "aws-sdk-s3", require: false
+
+# Resize and strip images with libvips. Render's Ruby image includes it.
+gem "image_processing", "~> 1.14"
+gem "ruby-vips", "~> 2.2"
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 

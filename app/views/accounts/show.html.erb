@@ -5,6 +5,7 @@
   <p class="font-display text-2xl">Swatch</p>
   <h1 class="mt-6 font-display text-4xl" tabindex="-1" <% if @password_alert.blank? && @email_alert.blank? %>autofocus<% end %>>Account</h1>
   <p class="mt-4 break-all">Your sign-in email is <%= Current.user.email_address %></p>
+  <p class="mt-2"><%= @image_usage %></p>
   <p class="mt-2"><a class="underline" href="/">Back to the library</a></p>
 
   <% if flash[:notice] %>

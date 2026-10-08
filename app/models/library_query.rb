@@ -37,7 +37,7 @@ class LibraryQuery
     end
 
     limit = page_size
-    rows = scope.preload(:tags).limit(limit + 1).to_a
+    rows = scope.preload(:tags).with_attached_image.limit(limit + 1).to_a
     page = rows.first(limit)
     next_cursor = rows.size > limit ? ItemCursor.encode(page.last, sort) : nil
 

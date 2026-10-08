@@ -19,6 +19,8 @@ import {
   updateItemCaches,
   validateItem,
 } from "../lib/items";
+import { ImageField } from "./ImageField";
+import { useImagesEnabled } from "../lib/imagesEnabled";
 import { TagCombobox } from "./TagCombobox";
 import { ToastViewport, useToast } from "./Toasts";
 
@@ -59,6 +61,7 @@ export function DetailPanel() {
   const location = useLocation();
   const queryClient = useQueryClient();
   const toast = useToast();
+  const imagesEnabled = useImagesEnabled();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const closing = useRef(false);
@@ -279,7 +282,21 @@ export function DetailPanel() {
       ) : null}
 
       {item && !missing ? (
-        <div className="mt-4">
+        <div className="mt-4" data-image-scope="">
+          <ImageField
+            enabled={imagesEnabled}
+            item={item}
+            itemId={item.id}
+            itemTitle={item.title}
+            onDirty={() => undefined}
+            onSuggestColor={(hex) => commit({ color: hex })}
+            onNotice={(message, tone) => toast.show(message, tone)}
+            onChange={(saved) => {
+              queryClient.setQueryData<Item>(["item", id], saved);
+              updateItemCaches(queryClient, (current) => replaceItem(current, saved));
+            }}
+          />
+
           <h2 id={titleId} ref={titleRef} tabIndex={-1} className="font-display text-3xl">
             {editingTitle ? (
               <span data-quick-edit>

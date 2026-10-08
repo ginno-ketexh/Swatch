@@ -30,3 +30,7 @@ bundle exec rails db:migrate
 # and changes nothing, if a swatch or tag still has no owner. Render
 # then keeps the previous version live.
 bundle exec rails swatch:bootstrap_owner
+
+# Drop image files that were left unattached. This does nothing when
+# image storage is off, and a problem here does not fail the deploy.
+bundle exec rails swatch:purge_orphaned_blobs

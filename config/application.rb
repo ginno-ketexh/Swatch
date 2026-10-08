@@ -1,4 +1,5 @@
 require_relative "boot"
+require_relative "../lib/image_upload_limit"
 
 require "rails"
 # Pick the frameworks you want:
@@ -27,6 +28,7 @@ module Swatch
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w[assets tasks])
+    config.middleware.use ImageUploadLimit
 
     # Configuration for the application, engines, and railties goes here.
     #
@@ -36,8 +38,10 @@ module Swatch
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
-    # Image variants need the image_processing gem and libvips. This milestone
-    # does not resize uploads, and the free Render image does not include libvips.
-    config.active_storage.variant_processor = :disabled
+    # Render's native Ruby runtime includes libvips. Variants are WebP
+    # thumbnails made after upload. Active Storage's own routes are off
+    # because they do not check who is signed in.
+    config.active_storage.variant_processor = :vips
+    config.active_storage.draw_routes = false
   end
 end
