@@ -32,13 +32,8 @@ services:
         value: production
       - key: SECRET_KEY_BASE
         sync: false
-      # Only used to create the first owner. Remove both after the first sign-in.
-      # Render ignores new sync: false keys on a Blueprint that already exists,
-      # so add OWNER_EMAIL by hand in the dashboard before merging.
-      - key: OWNER_EMAIL
-        sync: false
-      - key: OWNER_PASSWORD
-        sync: false
+      # The owner account already exists. The build does not read
+      # OWNER_EMAIL, OWNER_PASSWORD, or OWNER_USERNAME.
       - key: WEB_CONCURRENCY
         value: "1"
       - key: RAILS_MAX_THREADS

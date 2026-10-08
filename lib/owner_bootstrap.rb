@@ -1,6 +1,13 @@
-# Creates the first owner during deploy and attaches any swatches that
-# were saved before accounts existed. A failure raises OwnerBootstrap::Error
-# so the build stops and the previous version stays live.
+# Creates the first owner during deploy when the database has no account yet.
+# Once an account exists, an empty environment is enough: this does not read
+# OWNER_EMAIL or OWNER_PASSWORD. OWNER_NEW_PASSWORD is optional and only
+# replaces a forgotten password.
+#
+# The require-owner migration runs first and stops the deploy, without
+# changing rows, if a swatch or tag still has no owner. The backfill below
+# only matters when that column is still optional.
+# A failure raises OwnerBootstrap::Error so the build stops and the previous
+# version stays live.
 class OwnerBootstrap
   class Error < StandardError; end
 

@@ -22,12 +22,9 @@ Copy the long string it prints. You will paste it into Render in a moment. Do no
 2. Connect GitHub if Render asks you to. Grant access to the Swatch repository.
 3. In the dashboard, open **Blueprints** and choose **New Blueprint Instance**.
 4. Select the Swatch repository. Render reads `render.yaml` from the `main` branch.
-5. Render will ask for three secrets you choose or generate. Do not put them in the repository.
+5. Render will ask for one secret you generate. Do not put it in the repository.
    - `SECRET_KEY_BASE`: paste the string from `bin/rails secret`.
-   - `OWNER_EMAIL`: the email you will use to sign in.
-   - `OWNER_PASSWORD`: a password of at least 15 characters. This is not the database password. It is only used to create the first account, and you can remove it after you sign in.
-   Leave the other values as the file sets them. `DATABASE_URL` is filled in from the database Render creates. You do not type a database password.
-   Render ignores new secret keys on a Blueprint that already exists. If the site is already running, add `OWNER_EMAIL` by hand. See "Switching from the password pop-up to real sign-in" below.
+   Leave the other values as the file sets them. `DATABASE_URL` is filled in from the database Render creates. You do not type a database password. The owner account already exists, so the build does not ask for `OWNER_EMAIL`, `OWNER_PASSWORD`, or `OWNER_USERNAME`.
 6. Approve the Blueprint.
 
 Render then creates:
@@ -39,7 +36,7 @@ The first deploy takes a few minutes. When it finishes, Render shows a URL that 
 
 ## Check that it is alive
 
-1. Open the `.onrender.com` URL. You should see the Swatch sign-in page. Sign in with `OWNER_EMAIL` and `OWNER_PASSWORD`. After that you should see your library.
+1. Open the `.onrender.com` URL. You should see the Swatch sign-in page. Sign in with the email and password you already use. After that you should see your library.
 2. Open the same URL with `/up` on the end, for example `https://swatch.onrender.com/up`. The page should say `OK` and nothing else. This address does not ask you to sign in, so Render can check the app without knowing your password.
 
 If `/up` says `Unavailable`, the app started but cannot reach the database. Check that the Blueprint created `swatch-db` and that `DATABASE_URL` is listed on the web service.
@@ -62,9 +59,9 @@ Render keeps the last successful version running. The site does not go blank jus
 
 A deploy also fails fast, with a plain message, if `DATABASE_URL` or `SECRET_KEY_BASE` is missing. The message names the missing setting and does not print secret values.
 
-The build also stops, before the new version goes live, if this is the first time accounts exist and `OWNER_EMAIL` or `OWNER_PASSWORD` is missing or not valid. The log names the setting and never prints the value. The previous version stays up. Fix the value, then use **Manual Deploy** and **Deploy latest commit**.
+The build also stops, before the new version goes live, if a swatch or tag still has no owner. The log says how many. No rows are changed or deleted. The previous version stays up.
 
-Once an owner account exists, the build no longer needs those two settings. You can delete them. See the next section.
+Once an owner account exists, the build does not need `OWNER_EMAIL`, `OWNER_PASSWORD`, or `OWNER_USERNAME`. Leave them unset. See the next section.
 
 `RAILS_MASTER_KEY` is the other way to supply the cookie secret, but only after you create encrypted credentials with `bin/rails credentials:edit`. This milestone does not commit a master key or a credentials file. Use `SECRET_KEY_BASE`.
 
@@ -75,29 +72,17 @@ Once an owner account exists, the build no longer needs those two settings. You 
 - The free database **expires 30 days** after you create it. You then have about 14 days to upgrade it to a paid plan. After that grace period, Render deletes the database and everything in it. There are no backups on the free database, and storage is capped (1 GB). Fine for learning. Not a place to keep a library you care about.
 - Free web services have an ephemeral disk. Uploaded files on the instance disappear on the next deploy. This milestone does not store uploads yet.
 
-## Switching from the password pop-up to real sign-in
+## This deploy
 
-The live site used to ask for a name and password in the browser's grey pop-up. This version uses a Swatch sign-in page instead.
+You do not need to change anything on Render. The owner account is already there. A normal deploy does not read `OWNER_EMAIL`, `OWNER_PASSWORD`, or `OWNER_USERNAME`.
 
-Render does not add new secret keys from `render.yaml` onto a service that is already running. Add `OWNER_EMAIL` yourself before you merge. Keep `OWNER_USERNAME` until the new version is up, so a failed build can still serve the old pop-up.
+If the deploy log says it is refusing to require an owner, a swatch or tag has no owner. Nothing was deleted. The site you have now stays up. Do not delete rows by hand to force it through.
 
-Before you merge:
+## If you forget your password
 
-1. Render, then the `swatch` web service, then **Environment**. Add `OWNER_EMAIL` and set it to the email you want to sign in with.
-2. Check `OWNER_PASSWORD` is at least 15 characters. That value becomes your first Swatch password, so change it there now if you want a different one. Leave `OWNER_USERNAME` in place for now.
+Add `OWNER_NEW_PASSWORD` in Render, choose **Save, rebuild, and deploy**, sign in with that new password, then delete `OWNER_NEW_PASSWORD` and deploy again. The log says to remove it. That step also signs you out of every device. Leave it unset the rest of the time.
 
-Merge, then watch the deploy log:
-
-3. Look for `Owner account created for g***@…`. If the build fails with a message about `OWNER_EMAIL` or `OWNER_PASSWORD`, nothing broke. The old version is still live with the old pop-up. Fix the value and click **Manual Deploy**, then **Deploy latest commit**.
-
-After it is live:
-
-4. Open https://swatch-kr01.onrender.com. You should see the Swatch sign-in page, not the grey pop-up. Sign in. Your swatches and tags should all be there.
-5. Visit `/up`. It still says `OK` without signing in.
-6. In Render, then **Environment**, delete `OWNER_USERNAME`, `OWNER_PASSWORD`, and `OWNER_EMAIL`. Choose **Save, rebuild, and deploy**. The build skips account creation once you exist.
-7. Optional: change your password at `/account`.
-
-If you forget the password later, add `OWNER_NEW_PASSWORD` in Render, choose **Save, rebuild, and deploy**, sign in with that new password, then delete `OWNER_NEW_PASSWORD` and deploy again. The log says to remove it. That step also signs you out of every device.
+You can also change your password at `/account` while you are signed in.
 
 ## HTTPS
 
