@@ -9,7 +9,7 @@ This is the list of Swatch milestones. Status lives in this file.
 | M3 | Interactive React Screen | Done |
 | M4 | Search, Tags & Filters | Done |
 | M5 | User Authentication & Authorization | Done |
-| M6 | Image Uploads | Not started |
+| M6 | Image Uploads | Done |
 | M7 | Public Share Page & Polish | Not started |
 
 ## M1 — Blank App Deployment
@@ -86,3 +86,18 @@ Done. Sign-in merged in pull request #15 on 2026-10-08. Requiring an owner on ev
 | M5-06 | Plain-language explainer | Not started |
 
 M5-06 is a plain-language explainer. It is written separately and was not part of pull request #15 or #16.
+
+## M6 — Image Uploads
+
+Done. Merged in pull request #18 on 2026-10-08. Verified live on Render with Cloudflare R2: a photo was still there after a refresh and after a redeploy.
+
+| Story | Name | Status |
+| --- | --- | --- |
+| M6-01 | Permanent, private image storage | Done |
+| M6-02 | Add an image to a swatch | Done |
+| M6-03 | See my images | Done |
+| M6-04 | Replace, remove, or describe an image | Done |
+| M6-05 | Colour from my image | Done |
+| M6-06 | Plain-language explainer | Not started |
+
+M6-06 is a plain-language explainer. It is written separately and was not part of pull request #18.
