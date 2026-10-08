@@ -12,17 +12,18 @@ export class ApiError extends Error {
   }
 }
 
-function csrfToken(): string {
+export function csrfToken(): string {
   return document.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content ?? "";
 }
 
-// A page opened as http://name:password@host still has those credentials in
-// its address. A relative fetch then throws in the browser. Build an
-// absolute URL from the origin, which does not include the password.
-function resolveUrl(path: string): string {
-  const origin = window.location.origin;
-  if (!origin || origin === "null") return path;
-  return new URL(path, origin).href;
+export const navigation = {
+  assign(url: string) {
+    window.location.assign(url);
+  },
+};
+
+export function signInPath(returnTo: string): string {
+  return `/sign-in?return_to=${encodeURIComponent(returnTo)}`;
 }
 
 function readFieldErrors(value: unknown): FieldErrors {
@@ -65,11 +66,20 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     headers.set("X-CSRF-Token", csrfToken());
   }
 
-  const response = await fetch(resolveUrl(path), {
+  const method = (init.method ?? "GET").toUpperCase();
+  const response = await fetch(path, {
     ...init,
     headers,
     credentials: "include",
   });
+
+  if (response.status === 401) {
+    if (method === "GET" || method === "HEAD") {
+      navigation.assign(signInPath(`${window.location.pathname}${window.location.search}`));
+    } else {
+      window.dispatchEvent(new Event("swatch:signed-out"));
+    }
+  }
 
   if (!response.ok) throw await parseError(response);
   if (response.status === 204) return undefined as T;

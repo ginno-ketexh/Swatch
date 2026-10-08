@@ -1,0 +1,138 @@
+<% content_for :title, "Account · Swatch" %>
+<% email_value = @email_address || Current.user.email_address %>
+
+<main id="main" class="mx-auto w-full max-w-md px-4 py-8">
+  <p class="font-display text-2xl">Swatch</p>
+  <h1 class="mt-6 font-display text-4xl" tabindex="-1" <% if @password_alert.blank? && @email_alert.blank? %>autofocus<% end %>>Account</h1>
+  <p class="mt-4 break-all">Your sign-in email is <%= Current.user.email_address %></p>
+  <p class="mt-2"><a class="underline" href="/">Back to the library</a></p>
+
+  <% if flash[:notice] %>
+    <p class="mt-4" role="status"><%= flash[:notice] %></p>
+  <% end %>
+
+  <section class="mt-8">
+    <h2 class="font-display text-2xl">Change password</h2>
+    <% if @password_alert %>
+      <div id="password-error" class="mt-4 border border-accent bg-surface px-3 py-3" role="alert" tabindex="-1" autofocus>
+        <p><%= @password_alert %></p>
+        <% if @password_errors.present? %>
+          <ul class="mt-2 list-disc pl-5">
+            <% @password_errors.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        <% end %>
+      </div>
+    <% end %>
+
+    <form class="mt-4" action="<%= account_password_path %>" method="post" accept-charset="UTF-8">
+      <input type="hidden" name="_method" value="patch" autocomplete="off">
+      <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>" autocomplete="off">
+      <%= render "shared/password_field",
+            id: "current_password",
+            name: "current_password",
+            label: "Current password",
+            autocomplete: "current-password",
+            invalid: @password_alert.present?,
+            describedby: "password-error" %>
+      <%= render "shared/password_field",
+            id: "password",
+            name: "password",
+            label: "New password",
+            autocomplete: "new-password",
+            invalid: @password_alert.present?,
+            describedby: "password-error" %>
+      <%= render "shared/password_field",
+            id: "password_confirmation",
+            name: "password_confirmation",
+            label: "Confirm new password",
+            autocomplete: "new-password",
+            invalid: @password_alert.present?,
+            describedby: "password-error" %>
+      <button type="submit" class="mt-6 min-h-11 bg-ink px-4 py-2 text-canvas" data-pending="Saving…">
+        Change password
+      </button>
+    </form>
+  </section>
+
+  <section class="mt-10">
+    <h2 class="font-display text-2xl">Change sign-in email</h2>
+    <% if @email_alert %>
+      <div id="email-error" class="mt-4 border border-accent bg-surface px-3 py-3" role="alert" tabindex="-1" <% unless @password_alert %>autofocus<% end %>>
+        <p><%= @email_alert %></p>
+        <% if @email_errors.present? %>
+          <ul class="mt-2 list-disc pl-5">
+            <% @email_errors.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        <% end %>
+      </div>
+    <% end %>
+
+    <form class="mt-4" action="<%= account_email_path %>" method="post" accept-charset="UTF-8">
+      <input type="hidden" name="_method" value="patch" autocomplete="off">
+      <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>" autocomplete="off">
+      <div>
+        <label class="block" for="email_address">Email</label>
+        <input
+          id="email_address"
+          name="email_address"
+          type="email"
+          autocomplete="username"
+          autocapitalize="none"
+          spellcheck="false"
+          value="<%= email_value %>"
+          class="mt-1 min-h-11 w-full min-w-0 border border-ink bg-canvas px-3 text-ink"
+          <% if @email_alert %>
+            aria-invalid="true"
+            aria-describedby="email-error"
+          <% end %>
+        >
+      </div>
+      <%= render "shared/password_field",
+            id: "email_current_password",
+            name: "current_password",
+            label: "Current password",
+            autocomplete: "current-password",
+            invalid: @email_alert.present?,
+            describedby: "email-error" %>
+      <button type="submit" class="mt-6 min-h-11 bg-ink px-4 py-2 text-canvas" data-pending="Saving…">
+        Change email
+      </button>
+    </form>
+  </section>
+
+  <section class="mt-10">
+    <h2 class="font-display text-2xl">Where you're signed in</h2>
+    <% if @sessions.size <= 1 %>
+      <p class="mt-4">Only this device</p>
+    <% else %>
+      <form class="mt-4" action="<%= account_other_sessions_path %>" method="post">
+        <input type="hidden" name="_method" value="delete" autocomplete="off">
+        <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>" autocomplete="off">
+        <button type="submit" class="min-h-11 underline" data-pending="Signing out…">Sign out everywhere else</button>
+      </form>
+    <% end %>
+
+    <ul class="mt-4 grid gap-4">
+      <% @sessions.each do |record| %>
+        <li class="border border-line bg-surface px-3 py-3">
+          <p><%= record.device_label %></p>
+          <p>Last active <%= time_ago_in_words(record.last_seen_at) %> ago</p>
+          <% if record.id == Current.session.id %>
+            <p>This device</p>
+          <% end %>
+          <form class="mt-2" action="<%= account_session_path(record) %>" method="post">
+            <input type="hidden" name="_method" value="delete" autocomplete="off">
+            <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>" autocomplete="off">
+            <button type="submit" class="min-h-11 underline" data-pending="Signing out…">
+              <%= record.id == Current.session.id ? "Sign out this device" : "Sign out #{record.device_label}" %>
+            </button>
+          </form>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+</main>

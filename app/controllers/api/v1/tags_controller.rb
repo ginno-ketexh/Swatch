@@ -19,7 +19,7 @@ module Api
       end
 
       def index
-        rows = Tag.left_joins(:item_tags)
+        rows = Current.user.tags.left_joins(:item_tags)
           .select("tags.*, COUNT(item_tags.id) AS items_count")
           .group("tags.id")
           .order(Arel.sql("lower(tags.name) ASC"))
@@ -43,7 +43,7 @@ module Api
 
       private
         def set_tag
-          @tag = Tag.find(params[:id])
+          @tag = Current.user.tags.find(params[:id])
         end
 
         def tag_params

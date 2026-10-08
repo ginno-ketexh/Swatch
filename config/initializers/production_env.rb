@@ -13,9 +13,10 @@ module Swatch
         missing << "SECRET_KEY_BASE (or RAILS_MASTER_KEY, once config/credentials.yml.enc exists)"
       end
 
-      missing << "OWNER_USERNAME" if env["OWNER_USERNAME"].to_s.strip.empty?
-      missing << "OWNER_PASSWORD" if env["OWNER_PASSWORD"].to_s.strip.empty?
-
+      # OWNER_EMAIL and OWNER_PASSWORD are checked by swatch:bootstrap_owner
+      # during the build, not here. A missing value fails the build and
+      # leaves the previous version live. Booting must still work after
+      # those settings are removed.
       missing
     end
 

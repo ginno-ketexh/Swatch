@@ -16,7 +16,7 @@ class ItemsApiTest < ActionDispatch::IntegrationTest
     subscriber = ActiveSupport::Notifications.subscribe("sql.active_record") do |*, payload|
       sqls << payload[:sql]
     end
-    get api_v1_items_path, params: { per_page: 1 }, headers: owner_headers
+    get api_v1_items_path, params: { per_page: 1 }
     ActiveSupport::Notifications.unsubscribe(subscriber)
 
     assert_response :success
@@ -29,7 +29,7 @@ class ItemsApiTest < ActionDispatch::IntegrationTest
     page_sqls = item_sqls.grep_v(/\bcount\s*\(/i)
     assert_equal 1, page_sqls.size
 
-    get api_v1_items_path, params: { per_page: 1, cursor: body["next_cursor"] }, headers: owner_headers
+    get api_v1_items_path, params: { per_page: 1, cursor: body["next_cursor"] }
 
     assert_response :success
     next_body = response.parsed_body
@@ -41,25 +41,25 @@ class ItemsApiTest < ActionDispatch::IntegrationTest
   test "per page defaults to 20 and never goes past 50" do
     21.times { |index| Item.create!(title: "Row #{index}") }
 
-    get api_v1_items_path, headers: owner_headers
+    get api_v1_items_path
     assert_equal 20, response.parsed_body["items"].size
     assert response.parsed_body["next_cursor"].present?
 
-    get api_v1_items_path, params: { per_page: 100 }, headers: owner_headers
+    get api_v1_items_path, params: { per_page: 100 }
     assert_equal 21, response.parsed_body["items"].size
   end
 
   test "a huge page size is capped at 50" do
     51.times { |index| Item.create!(title: "Cap #{index}") }
 
-    get api_v1_items_path, params: { per_page: 100 }, headers: owner_headers
+    get api_v1_items_path, params: { per_page: 100 }
 
     assert_equal 50, response.parsed_body["items"].size
     assert response.parsed_body["next_cursor"].present?
   end
 
   test "an invalid cursor is a field error" do
-    get api_v1_items_path, params: { cursor: "not-a-cursor" }, headers: owner_headers
+    get api_v1_items_path, params: { cursor: "not-a-cursor" }
 
     assert_response :unprocessable_entity
     assert_equal [ "is invalid" ], response.parsed_body["errors"]["cursor"]
@@ -68,7 +68,6 @@ class ItemsApiTest < ActionDispatch::IntegrationTest
   test "show create update and destroy" do
     post api_v1_items_path,
       params: { item: { title: "  Lamp  ", source_url: "https://lamps.example/a", notes: "brass", color: "#aabbcc", admin: true } },
-      headers: owner_headers,
       as: :json
 
     assert_response :created
@@ -77,18 +76,17 @@ class ItemsApiTest < ActionDispatch::IntegrationTest
     assert_equal "#AABBCC", created["color"]
     assert_not created.key?("admin")
 
-    get api_v1_item_path(created["id"]), headers: owner_headers
+    get api_v1_item_path(created["id"])
     assert_response :success
     assert_equal "brass", response.parsed_body["notes"]
 
     patch api_v1_item_path(created["id"]),
       params: { item: { title: "Library lamp" } },
-      headers: owner_headers,
       as: :json
     assert_response :success
     assert_equal "Library lamp", response.parsed_body["title"]
 
-    delete api_v1_item_path(created["id"]), headers: owner_headers, as: :json
+    delete api_v1_item_path(created["id"]), as: :json
     assert_response :no_content
     assert_not Item.exists?(created["id"])
   end
@@ -96,7 +94,6 @@ class ItemsApiTest < ActionDispatch::IntegrationTest
   test "invalid input is a field error and does not leak a trace" do
     post api_v1_items_path,
       params: { item: { title: "   ", source_url: "JavaScript:alert(1)" } },
-      headers: owner_headers,
       as: :json
 
     assert_response :unprocessable_entity
@@ -107,7 +104,7 @@ class ItemsApiTest < ActionDispatch::IntegrationTest
   end
 
   test "a missing item is json not found without an exception message" do
-    get api_v1_item_path("999999"), headers: owner_headers
+    get api_v1_item_path("999999")
 
     assert_response :not_found
     assert_equal({ "error" => "Not found" }, response.parsed_body)
@@ -116,11 +113,11 @@ class ItemsApiTest < ActionDispatch::IntegrationTest
 
   test "writes are rate limited" do
     30.times do |index|
-      post api_v1_items_path, params: { item: { title: "Rate #{index}" } }, headers: owner_headers, as: :json
+      post api_v1_items_path, params: { item: { title: "Rate #{index}" } }, as: :json
       assert_response :created
     end
 
-    post api_v1_items_path, params: { item: { title: "Too many" } }, headers: owner_headers, as: :json
+    post api_v1_items_path, params: { item: { title: "Too many" } }, as: :json
 
     assert_response :too_many_requests
     assert_equal({ "error" => "Too many requests" }, response.parsed_body)
@@ -129,7 +126,7 @@ class ItemsApiTest < ActionDispatch::IntegrationTest
 
   test "a write without a csrf token is rejected" do
     with_forgery_protection do
-      post api_v1_items_path, params: { item: { title: "No token" } }, headers: owner_headers, as: :json
+      post api_v1_items_path, params: { item: { title: "No token" } }, as: :json
 
       assert_response :unprocessable_entity
       assert_equal "Invalid authenticity token", response.parsed_body["error"]
@@ -139,12 +136,12 @@ class ItemsApiTest < ActionDispatch::IntegrationTest
 
   test "a write with the csrf token from the page is accepted" do
     with_forgery_protection do
-      get root_path, headers: owner_headers
+      get root_path
       token = css_select('meta[name="csrf-token"]').first["content"]
 
       post api_v1_items_path,
         params: { item: { title: "With token" } },
-        headers: owner_headers.merge("X-CSRF-Token" => token),
+        headers: { "X-CSRF-Token" => token },
         as: :json
 
       assert_response :created
@@ -154,11 +151,11 @@ class ItemsApiTest < ActionDispatch::IntegrationTest
 
   test "a write with the wrong csrf token is rejected" do
     with_forgery_protection do
-      get root_path, headers: owner_headers
+      get root_path
 
       post api_v1_items_path,
         params: { item: { title: "Bad token" } },
-        headers: owner_headers.merge("X-CSRF-Token" => "not-the-token"),
+        headers: { "X-CSRF-Token" => "not-the-token" },
         as: :json
 
       assert_response :unprocessable_entity
@@ -169,14 +166,14 @@ class ItemsApiTest < ActionDispatch::IntegrationTest
   test "deep links to the form serve the app shell" do
     item = Item.create!(title: "Edit me")
 
-    get "/items/#{item.id}/edit", headers: owner_headers
+    get "/items/#{item.id}/edit"
 
     assert_response :success
     assert_select "#root[data-version=?]", Swatch::VERSION
   end
 
   test "a swatch detail path serves the app shell" do
-    get "/items/4", headers: owner_headers
+    get "/items/4"
 
     assert_response :success
     assert_select "#root[data-version=?]", Swatch::VERSION

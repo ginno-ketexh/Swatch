@@ -1,0 +1,77 @@
+<% content_for :title, "Sign in · Swatch" %>
+
+<main id="main" class="mx-auto w-full max-w-md px-4 py-8" tabindex="-1">
+  <p class="font-display text-2xl">Swatch</p>
+  <h1 id="sign-in-title" class="mt-6 font-display text-4xl" tabindex="-1" <% unless @alert %>autofocus<% end %>>Sign in</h1>
+
+  <% if flash[:notice] %>
+    <p class="mt-4" role="status"><%= flash[:notice] %></p>
+  <% end %>
+
+  <% if @alert %>
+    <div id="sign-in-error" class="mt-4 border border-accent bg-surface px-3 py-3" role="alert" tabindex="-1" autofocus>
+      <p><%= @alert %></p>
+    </div>
+  <% end %>
+
+  <form class="mt-6" action="<%= session_path %>" method="post" accept-charset="UTF-8">
+    <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>" autocomplete="off">
+    <input type="hidden" name="return_to" value="<%= @return_to %>">
+
+    <div>
+      <label class="block" for="email_address">Email</label>
+      <input
+        id="email_address"
+        name="email_address"
+        type="email"
+        autocomplete="username"
+        autocapitalize="none"
+        spellcheck="false"
+        value="<%= @email_address %>"
+        class="mt-1 min-h-11 w-full min-w-0 border border-ink bg-canvas px-3 text-ink"
+        <% if @alert %>
+          aria-invalid="true"
+          aria-describedby="sign-in-error"
+        <% end %>
+      >
+    </div>
+
+    <div class="mt-4">
+      <label class="block" for="password">Password</label>
+      <div class="mt-1 grid gap-2">
+        <input
+          id="password"
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          class="min-h-11 w-full min-w-0 border border-ink bg-canvas px-3 text-ink"
+          <% if @alert %>
+            aria-invalid="true"
+            aria-describedby="sign-in-error"
+          <% end %>
+        >
+        <button
+          type="button"
+          class="min-h-11 justify-self-start underline"
+          data-password-toggle
+          aria-pressed="false"
+          aria-controls="password"
+        >
+          Show password
+        </button>
+      </div>
+      <p class="mt-2" data-caps-lock hidden aria-live="polite">Caps Lock is on</p>
+    </div>
+
+    <div class="mt-4">
+      <label class="flex min-h-11 items-center gap-2" for="remember">
+        <input id="remember" name="remember" type="checkbox" value="1" class="size-6">
+        Keep me signed in on this device
+      </label>
+    </div>
+
+    <button type="submit" class="mt-6 min-h-11 bg-ink px-4 py-2 text-canvas" data-pending="Signing in…">
+      Sign in
+    </button>
+  </form>
+</main>

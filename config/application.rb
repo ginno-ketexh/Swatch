@@ -26,9 +26,7 @@ module Swatch
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    # The owner-lock files are required from an initializer, which runs
-    # before Zeitwerk can load them. Keep them out of the autoload paths.
-    config.autoload_lib(ignore: %w[assets tasks owner_gate.rb owner_authentication_middleware.rb])
+    config.autoload_lib(ignore: %w[assets tasks])
 
     # Configuration for the application, engines, and railties goes here.
     #

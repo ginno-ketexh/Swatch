@@ -32,7 +32,10 @@ services:
         value: production
       - key: SECRET_KEY_BASE
         sync: false
-      - key: OWNER_USERNAME
+      # Only used to create the first owner. Remove both after the first sign-in.
+      # Render ignores new sync: false keys on a Blueprint that already exists,
+      # so add OWNER_EMAIL by hand in the dashboard before merging.
+      - key: OWNER_EMAIL
         sync: false
       - key: OWNER_PASSWORD
         sync: false

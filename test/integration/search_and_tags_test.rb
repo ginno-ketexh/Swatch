@@ -10,20 +10,20 @@ class SearchAndTagsTest < ActionDispatch::IntegrationTest
     Item.create!(title: "Other", notes: "plaster only", color: "#112233")
     Item.create!(title: "Plain", notes: "nothing", color: "#7C2D24")
 
-    get api_v1_items_path, params: { q: "  terracotta   plaster  " }, headers: owner_headers
+    get api_v1_items_path, params: { q: "  terracotta   plaster  " }
     assert_response :success
     assert_equal [ match.id ], response.parsed_body["items"].map { |item| item["id"] }
     assert_equal 1, response.parsed_body["total_count"]
 
-    get api_v1_items_path, params: { q: "dribbble" }, headers: owner_headers
+    get api_v1_items_path, params: { q: "dribbble" }
     assert_equal [ match.id ], response.parsed_body["items"].map { |item| item["id"] }
 
-    get api_v1_items_path, params: { q: "7c2d24" }, headers: owner_headers
+    get api_v1_items_path, params: { q: "7c2d24" }
     ids = response.parsed_body["items"].map { |item| item["id"] }
     assert_includes ids, match.id
     assert_equal 2, ids.size
 
-    get api_v1_items_path, params: { q: "   " }, headers: owner_headers
+    get api_v1_items_path, params: { q: "   " }
     assert_equal 3, response.parsed_body["total_count"]
   end
 
@@ -35,43 +35,43 @@ class SearchAndTagsTest < ActionDispatch::IntegrationTest
     drop = Item.create!(title: "Safe", notes: "still here")
     Item.create!(title: "Café tile", notes: "🧵 thread")
 
-    get api_v1_items_path, params: { q: "%" }, headers: owner_headers
+    get api_v1_items_path, params: { q: "%" }
     assert_response :success
     assert_equal [ kept.id ], response.parsed_body["items"].map { |item| item["id"] }
 
-    get api_v1_items_path, params: { q: "_" }, headers: owner_headers
+    get api_v1_items_path, params: { q: "_" }
     assert_equal [ kept.id ], response.parsed_body["items"].map { |item| item["id"] }
 
-    get api_v1_items_path, params: { q: "\\" }, headers: owner_headers
+    get api_v1_items_path, params: { q: "\\" }
     assert_equal [ kept.id ], response.parsed_body["items"].map { |item| item["id"] }
 
-    get api_v1_items_path, params: { q: "<script>" }, headers: owner_headers
+    get api_v1_items_path, params: { q: "<script>" }
     assert_equal [ script.id ], response.parsed_body["items"].map { |item| item["id"] }
     assert_includes response.parsed_body["items"].first["notes"], "<script>alert(1)</script>"
 
-    get api_v1_items_path, params: { q: "\"hello\"" }, headers: owner_headers
+    get api_v1_items_path, params: { q: "\"hello\"" }
     assert_equal [ quoted.id ], response.parsed_body["items"].map { |item| item["id"] }
 
     before = Item.count
-    get api_v1_items_path, params: { q: "'; DROP TABLE items; --" }, headers: owner_headers
+    get api_v1_items_path, params: { q: "'; DROP TABLE items; --" }
     assert_response :success
     assert_equal before, Item.count
     assert Item.exists?(drop.id)
 
-    get api_v1_items_path, params: { q: "tile\u0000" }, headers: owner_headers
+    get api_v1_items_path, params: { q: "tile\u0000" }
     assert_response :success
     assert_equal [ "Café tile" ], response.parsed_body["items"].map { |item| item["title"] }
 
-    get api_v1_items_path, params: { q: "🧵" }, headers: owner_headers
+    get api_v1_items_path, params: { q: "🧵" }
     assert_equal [ "Café tile" ], response.parsed_body["items"].map { |item| item["title"] }
 
-    get api_v1_items_path, params: { q: "a" * 101 }, headers: owner_headers
+    get api_v1_items_path, params: { q: "a" * 101 }
     assert_response :unprocessable_entity
     assert_equal [ "is too long (maximum is 100 characters)" ], response.parsed_body["errors"]["q"]
 
     noisy = ([ "alpha" ] * 8 + [ "missing-word" ]).join(" ")
     Item.create!(title: noisy.split.first(8).join(" "))
-    get api_v1_items_path, params: { q: noisy }, headers: owner_headers
+    get api_v1_items_path, params: { q: noisy }
     assert_response :success
     assert_equal 1, response.parsed_body["total_count"]
   end
@@ -82,16 +82,16 @@ class SearchAndTagsTest < ActionDispatch::IntegrationTest
     both.replace_tag_names([ "Brand", "Web" ])
     brand_only.replace_tag_names([ "brand" ])
 
-    get api_v1_items_path, params: { tags: [ "brand", "WEB" ] }, headers: owner_headers
+    get api_v1_items_path, params: { tags: [ "brand", "WEB" ] }
     assert_response :success
     assert_equal [ both.id ], response.parsed_body["items"].map { |item| item["id"] }
     assert_equal [], response.parsed_body["ignored_tags"]
 
-    get api_v1_items_path, params: { tags: [ "brand", "missing" ] }, headers: owner_headers
+    get api_v1_items_path, params: { tags: [ "brand", "missing" ] }
     assert_equal [ both.id, brand_only.id ].sort, response.parsed_body["items"].map { |item| item["id"] }.sort
     assert_equal [ "missing" ], response.parsed_body["ignored_tags"]
 
-    get api_v1_items_path, params: { tags: %w[a b c d e f] }, headers: owner_headers
+    get api_v1_items_path, params: { tags: %w[a b c d e f] }
     assert_response :unprocessable_entity
     assert_equal [ "can filter by at most 5 tags" ], response.parsed_body["errors"]["tags"]
   end
@@ -109,7 +109,7 @@ class SearchAndTagsTest < ActionDispatch::IntegrationTest
       seen = []
       cursor = nil
       6.times do
-        get api_v1_items_path, params: { q: "wood", tags: [ "timber" ], sort: sort, per_page: 1, cursor: cursor }, headers: owner_headers
+        get api_v1_items_path, params: { q: "wood", tags: [ "timber" ], sort: sort, per_page: 1, cursor: cursor }
         assert_response :success, sort
         page = response.parsed_body
         break if page["items"].empty?
@@ -123,18 +123,18 @@ class SearchAndTagsTest < ActionDispatch::IntegrationTest
       assert_equal 3, seen.size
     end
 
-    get api_v1_items_path, params: { sort: "az", per_page: 10 }, headers: owner_headers
+    get api_v1_items_path, params: { sort: "az", per_page: 10 }
     titles = response.parsed_body["items"].map { |item| item["title"] }
     assert_equal titles.map(&:downcase).sort, titles.map(&:downcase)
 
     newest = nil
-    get api_v1_items_path, params: { sort: "newest", per_page: 1 }, headers: owner_headers
+    get api_v1_items_path, params: { sort: "newest", per_page: 1 }
     newest = response.parsed_body["next_cursor"]
-    get api_v1_items_path, params: { sort: "az", cursor: newest }, headers: owner_headers
+    get api_v1_items_path, params: { sort: "az", cursor: newest }
     assert_response :unprocessable_entity
     assert_equal [ "is invalid" ], response.parsed_body["errors"]["cursor"]
 
-    get api_v1_items_path, params: { sort: "sideways" }, headers: owner_headers
+    get api_v1_items_path, params: { sort: "sideways" }
     assert_response :success
     assert response.parsed_body["items"].first["title"].present?
   end
@@ -147,7 +147,7 @@ class SearchAndTagsTest < ActionDispatch::IntegrationTest
     end
 
     sqls = capture_sql do
-      get api_v1_items_path, params: { q: "Row", sort: "az" }, headers: owner_headers
+      get api_v1_items_path, params: { q: "Row", sort: "az" }
     end
 
     assert_response :success
@@ -162,7 +162,6 @@ class SearchAndTagsTest < ActionDispatch::IntegrationTest
   test "tag names replace the set and omit means leave them" do
     post api_v1_items_path,
       params: { item: { title: "Lamp", tag_names: [ "Brand", " brand ", "Web" ] } },
-      headers: owner_headers,
       as: :json
     assert_response :created
     created = response.parsed_body
@@ -170,20 +169,17 @@ class SearchAndTagsTest < ActionDispatch::IntegrationTest
 
     patch api_v1_item_path(created["id"]),
       params: { item: { title: "Library lamp" } },
-      headers: owner_headers,
       as: :json
     assert_equal [ "Brand", "Web" ], response.parsed_body["tags"].map { |tag| tag["name"] }
 
     patch api_v1_item_path(created["id"]),
       params: { item: { tag_names: [] } },
-      headers: owner_headers,
       as: :json
     assert_equal [], response.parsed_body["tags"]
     assert Tag.exists?(name: "Brand")
 
     patch api_v1_item_path(created["id"]),
       params: { item: { tag_names: [ "bad,name" ] } },
-      headers: owner_headers,
       as: :json
     assert_response :unprocessable_entity
     assert response.parsed_body["errors"]["tags"].present?
@@ -195,7 +191,7 @@ class SearchAndTagsTest < ActionDispatch::IntegrationTest
     item = Item.create!(title: "Hostile")
     ItemTag.create!(item: item, tag: tag)
 
-    get api_v1_item_path(item.id), headers: owner_headers
+    get api_v1_item_path(item.id)
     assert_response :success
     assert_equal "application/json", response.media_type
     assert_equal "<img src=x onerror=alert(1)>", response.parsed_body["tags"].first["name"]
@@ -206,71 +202,74 @@ class SearchAndTagsTest < ActionDispatch::IntegrationTest
     item.replace_tag_names([ "brand" ])
     tag = Tag.find_by!(name: "brand")
 
-    get api_v1_tags_path, headers: owner_headers
+    get api_v1_tags_path
     assert_response :success
     listed = response.parsed_body.find { |row| row["id"] == tag.id }
     assert_equal "brand", listed["name"]
     assert_equal 1, listed["items_count"]
 
-    patch api_v1_tag_path(tag.id), params: { tag: { name: "Brand" } }, headers: owner_headers, as: :json
+    patch api_v1_tag_path(tag.id), params: { tag: { name: "Brand" } }, as: :json
     assert_response :success
     assert_equal "Brand", response.parsed_body["name"]
 
     other = Tag.create!(name: "web")
-    patch api_v1_tag_path(tag.id), params: { tag: { name: "web" } }, headers: owner_headers, as: :json
+    patch api_v1_tag_path(tag.id), params: { tag: { name: "web" } }, as: :json
     assert_response :unprocessable_entity
     assert_equal [ "A tag with that name already exists" ], response.parsed_body["errors"]["name"]
 
-    delete api_v1_tag_path(other.id), headers: owner_headers, as: :json
+    delete api_v1_tag_path(other.id), as: :json
     assert_response :no_content
     assert Item.exists?(item.id)
     assert_not Tag.exists?(other.id)
 
-    delete api_v1_tag_path(tag.id), headers: owner_headers, as: :json
+    delete api_v1_tag_path(tag.id), as: :json
     assert_response :no_content
     assert Item.exists?(item.id)
     assert_not ItemTag.exists?(item_id: item.id)
 
-    delete api_v1_tag_path(tag.id), headers: owner_headers, as: :json
+    delete api_v1_tag_path(tag.id), as: :json
     assert_response :not_found
     assert_equal({ "error" => "Not found" }, response.parsed_body)
   end
 
   test "tag writes share the item write budget and need a csrf token" do
     30.times do |index|
-      post api_v1_items_path, params: { item: { title: "Rate #{index}" } }, headers: owner_headers, as: :json
+      post api_v1_items_path, params: { item: { title: "Rate #{index}" } }, as: :json
       assert_response :created
     end
     tag = Tag.create!(name: "late")
-    patch api_v1_tag_path(tag.id), params: { tag: { name: "later" } }, headers: owner_headers, as: :json
+    patch api_v1_tag_path(tag.id), params: { tag: { name: "later" } }, as: :json
     assert_response :too_many_requests
 
     Api::V1::ItemsController::RATE_LIMIT_STORE.clear
     120.times do
-      get api_v1_items_path, headers: owner_headers
+      get api_v1_items_path
       assert_response :success
     end
-    get api_v1_items_path, headers: owner_headers
+    get api_v1_items_path
     assert_response :too_many_requests
     assert_equal "Too many requests", response.parsed_body["error"]
 
     Api::V1::ItemsController::RATE_LIMIT_STORE.clear
     with_forgery_protection do
-      patch api_v1_tag_path(tag.id), params: { tag: { name: "nope" } }, headers: owner_headers, as: :json
+      patch api_v1_tag_path(tag.id), params: { tag: { name: "nope" } }, as: :json
       assert_response :unprocessable_entity
       assert_equal "Invalid authenticity token", response.parsed_body["error"]
 
-      delete api_v1_tag_path(tag.id), headers: owner_headers, as: :json
+      delete api_v1_tag_path(tag.id), as: :json
       assert_response :unprocessable_entity
       assert Tag.exists?(tag.id)
     end
   end
 
   test "new tag routes ask for the owner and the manage page is the app shell" do
+    sign_out
     get api_v1_tags_path
     assert_response :unauthorized
+    assert_equal "Sign in required", response.parsed_body["error"]
 
-    get "/tags", headers: owner_headers
+    sign_in_as(users(:owner))
+    get "/tags"
     assert_response :success
     assert_select "#root[data-version=?]", Swatch::VERSION
   end

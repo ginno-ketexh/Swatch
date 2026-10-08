@@ -6,8 +6,11 @@ class LibraryQuery
 
   Result = Struct.new(:items, :next_cursor, :total_count, :ignored_tags, :error, keyword_init: true)
 
-  def initialize(params)
+  def initialize(params, items: Item.all, tags: Tag.all, user_id: nil)
     @params = params
+    @items = items
+    @tags = tags
+    @user_id = user_id
   end
 
   def call
@@ -86,7 +89,7 @@ class LibraryQuery
       @known_tags ||= if requested_tags.empty?
         []
       else
-        found = Tag.where("lower(name) IN (?)", requested_tags).pluck(Arel.sql("lower(name)"))
+        found = @tags.where("lower(name) IN (?)", requested_tags).pluck(Arel.sql("lower(name)"))
         requested_tags & found
       end
     end
@@ -96,7 +99,7 @@ class LibraryQuery
     end
 
     def filtered_scope
-      scope = Item.all
+      scope = @items
       words.each do |word|
         like = "%#{Item.sanitize_sql_like(word)}%"
         hex = hex_color(word)
@@ -117,12 +120,13 @@ class LibraryQuery
       if known_tags.any?
         # Select item_id explicitly. Passing the grouped relation to
         # where(id:) would match item_tags.id instead of the swatch.
-        sql = Item.sanitize_sql_array([ <<~SQL.squish, known_tags, known_tags.size ])
+        sql = Item.sanitize_sql_array([ <<~SQL.squish, known_tags, @user_id, known_tags.size ])
           items.id IN (
             SELECT item_tags.item_id
             FROM item_tags
             INNER JOIN tags ON tags.id = item_tags.tag_id
             WHERE lower(tags.name) IN (?)
+              AND tags.user_id = ?
             GROUP BY item_tags.item_id
             HAVING COUNT(DISTINCT item_tags.tag_id) = ?
           )
