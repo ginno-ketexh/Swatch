@@ -8,7 +8,7 @@ This is the list of Swatch milestones. Status lives in this file.
 | M2 | Save & List Items | Done |
 | M3 | Interactive React Screen | Done |
 | M4 | Search, Tags & Filters | Done |
-| M5 | User Authentication & Authorization | Not started |
+| M5 | User Authentication & Authorization | Done |
 | M6 | Image Uploads | Not started |
 | M7 | Public Share Page & Polish | Not started |
 
@@ -71,3 +71,18 @@ Done. Merged in pull request #13 on 2026-10-08.
 | M4-06 | Plain-language explainer | Not started |
 
 M4-06 is a plain-language explainer. It is written separately and was not part of pull request #13.
+
+## M5 — User Authentication & Authorization
+
+Done. Sign-in merged in pull request #15 on 2026-10-08. Requiring an owner on every swatch and tag merged in pull request #16 on 2026-10-08.
+
+| Story | Name | Status |
+| --- | --- | --- |
+| M5-01 | Sign in and sign out | Done |
+| M5-02 | Your owner account and a safe switch-over | Done |
+| M5-03 | The whole app is private, except the heartbeat | Done |
+| M5-04 | Your swatches and tags belong to you | Done |
+| M5-05 | Your account and a way back in | Done |
+| M5-06 | Plain-language explainer | Not started |
+
+M5-06 is a plain-language explainer. It is written separately and was not part of pull request #15 or #16.
