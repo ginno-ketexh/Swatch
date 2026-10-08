@@ -202,7 +202,15 @@ describe("Search, tags, and filters", () => {
     });
     renderApp("/tags");
 
-    fireEvent.click(await screen.findByRole("button", { name: "Delete brand" }));
+    const rename = await screen.findByRole("button", { name: "Rename brand" });
+    fireEvent.click(rename);
+    const field = screen.getByLabelText("Tag name");
+    fireEvent.change(field, { target: { value: "label" } });
+    fireEvent.keyDown(field, { key: "Escape" });
+    expect(screen.getByRole("button", { name: "Rename brand" })).toHaveFocus();
+    expect(screen.queryByLabelText("Tag name")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete brand" }));
     const dialog = await screen.findByRole("dialog");
     expect(dialog).toHaveTextContent("Delete tag “brand”?");
     expect(dialog).toHaveTextContent("It will be removed from 12 swatches. The swatches stay in your library.");
