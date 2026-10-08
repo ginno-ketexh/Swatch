@@ -1,6 +1,6 @@
 # Swatch
 
-Swatch is a personal design-inspiration library. You can save a title, a link, notes, and a colour, then browse them as cards. Search, accounts, and image uploads come in later milestones.
+Swatch is a personal design-inspiration library. You can save a title, a link, notes, and a colour, then browse them as cards. Image uploads and a public share page come in later milestones.
 
 The plan and where each milestone stands are in [MILESTONES.md](MILESTONES.md).
 
@@ -24,9 +24,9 @@ That installs the Ruby and JavaScript dependencies, creates the databases, and s
 bin/dev
 ```
 
-Then open http://localhost:3000. The browser asks you to sign in. Locally the name and password are both `swatch`, unless you set `OWNER_USERNAME` and `OWNER_PASSWORD` in `.env`. Those two values are only for your machine. Do not reuse them on Render.
+Then open http://localhost:3000. Sign in with the email `owner@example.com` and the password `swatch-dev-password`. That password is only for the sample library on your machine. Do not reuse it on Render.
 
-http://localhost:3000/up should say `OK` and does not ask for a password. Render uses that address to check the app.
+http://localhost:3000/up should say `OK` and does not ask you to sign in. Render uses that address to check the app.
 
 After you sign in you should see your library. Click a card to read the notes in a side panel, and use **Grid** or **List** to change the layout. Press **?** to see the keyboard shortcuts. If the library is empty, choose **Add your first swatch**, fill in a title, and save. The new card shows up at the top. **Edit** changes it. **Remove** asks you to confirm first.
 
@@ -67,6 +67,6 @@ GitHub runs the same checks on every pull request. See `docs/BRANCH_PROTECTION.m
 
 ## Deploy
 
-The live site is https://swatch-kr01.onrender.com. Opening it asks for the owner sign-in. Adding `/up` to that address says `OK` and does not ask for a password.
+The live site is https://swatch-kr01.onrender.com. Opening it shows the Swatch sign-in page. Adding `/up` to that address says `OK` and does not ask you to sign in.
 
 See `docs/DEPLOY_RENDER.md`. Production secrets stay on Render. Do not commit `.env` or `config/master.key`.

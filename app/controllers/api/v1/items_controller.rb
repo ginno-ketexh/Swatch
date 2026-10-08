@@ -30,7 +30,12 @@ module Api
       end
 
       def index
-        result = LibraryQuery.new(params).call
+        result = LibraryQuery.new(
+          params,
+          items: Current.user.items,
+          tags: Current.user.tags,
+          user_id: Current.user.id
+        ).call
         if result.error
           render json: { errors: result.error }, status: :unprocessable_entity
           return
@@ -49,7 +54,7 @@ module Api
       end
 
       def create
-        item = Item.new(item_params)
+        item = Current.user.items.new(item_params)
         saved = false
         Item.transaction do
           if tag_names_sent? && !item.replace_tag_names(tag_names_param)
@@ -90,7 +95,7 @@ module Api
 
       private
         def set_item
-          @item = Item.preload(:tags).find(params[:id])
+          @item = Current.user.items.preload(:tags).find(params[:id])
         end
 
         def item_params

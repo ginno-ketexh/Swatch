@@ -12,9 +12,7 @@ class ProductionEnvTest < ActiveSupport::TestCase
     missing = Swatch::ProductionEnv.missing_settings(
       {
         "DATABASE_URL" => "postgres://example",
-        "SECRET_KEY_BASE" => "generated",
-        "OWNER_USERNAME" => "owner",
-        "OWNER_PASSWORD" => "secret"
+        "SECRET_KEY_BASE" => "generated"
       },
       credentials_present: false
     )
@@ -22,27 +20,24 @@ class ProductionEnvTest < ActiveSupport::TestCase
     assert_empty missing
   end
 
-  test "names a missing owner setting and does not print the password" do
+  test "does not require owner settings at boot and does not print a password" do
     env = {
       "DATABASE_URL" => "postgres://example",
       "SECRET_KEY_BASE" => "generated",
-      "OWNER_USERNAME" => "",
       "OWNER_PASSWORD" => "super-secret-owner-password"
     }
     missing = Swatch::ProductionEnv.missing_settings(env, credentials_present: false)
     message = Swatch::ProductionEnv.failure_message(missing)
 
-    assert_includes missing, "OWNER_USERNAME"
-    assert_includes message, "OWNER_USERNAME"
+    assert_empty missing
     assert_not_includes message, "super-secret-owner-password"
+    assert_not_includes message, "OWNER_PASSWORD"
   end
 
   test "accepts RAILS_MASTER_KEY only when encrypted credentials exist" do
     env = {
       "DATABASE_URL" => "postgres://example",
-      "RAILS_MASTER_KEY" => "abc",
-      "OWNER_USERNAME" => "owner",
-      "OWNER_PASSWORD" => "secret"
+      "RAILS_MASTER_KEY" => "abc"
     }
 
     assert_empty Swatch::ProductionEnv.missing_settings(env, credentials_present: true)

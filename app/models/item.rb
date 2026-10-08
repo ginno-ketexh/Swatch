@@ -1,7 +1,9 @@
 class Item < ApplicationRecord
+  belongs_to :user
   has_many :item_tags
   has_many :tags, through: :item_tags
 
+  before_validation :assign_current_user, on: :create
   before_validation :normalize_fields
 
   validates :title, presence: true, length: { maximum: 120 }
@@ -40,7 +42,7 @@ class Item < ApplicationRecord
       return false
     end
 
-    records = names.map { |name| Tag.find_or_create_by_name!(name) }
+    records = names.map { |name| Tag.find_or_create_by_name!(name, user: user) }
     invalid = records.select { |tag| tag.errors.any? }
     if invalid.any?
       invalid.each do |tag|
@@ -54,6 +56,10 @@ class Item < ApplicationRecord
   end
 
   private
+    def assign_current_user
+      self.user ||= Current.user
+    end
+
     def normalize_fields
       self.title = title.to_s.strip
       self.notes = notes.to_s.strip.presence

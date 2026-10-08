@@ -87,4 +87,22 @@ class TagTest < ActiveSupport::TestCase
     assert item.replace_tag_names([ "Brand", " brand ", "BRAND" ])
     assert_equal [ "Brand" ], item.tags.map(&:name)
   end
+
+  test "two people can use the same tag name and a nameless row cannot duplicate it" do
+    Tag.create!(name: "brand", user: users(:owner))
+    Tag.create!(name: "brand", user: users(:other))
+    assert_equal 2, Tag.where("lower(name) = ?", "brand").count
+
+    orphan = Tag.create!(name: "loose-brand", user: users(:other))
+    orphan.update_columns(name: "brand", user_id: nil)
+
+    assert_raises(ActiveRecord::RecordNotUnique) do
+      Tag.insert_all!([ {
+        name: "Brand",
+        user_id: nil,
+        created_at: Time.current,
+        updated_at: Time.current
+      } ])
+    end
+  end
 end

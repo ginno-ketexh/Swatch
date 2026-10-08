@@ -4,5 +4,7 @@ import { App } from "../components/App";
 const root = document.getElementById("root");
 
 if (root) {
-  createRoot(root).render(<App version={root.dataset.version ?? "unknown"} />);
+  createRoot(root).render(
+    <App version={root.dataset.version ?? "unknown"} email={root.dataset.email ?? ""} />,
+  );
 }

@@ -17,11 +17,11 @@ export function makeQueryClient(): QueryClient {
   });
 }
 
-export function appRoutes(version: string): RouteObject[] {
+export function appRoutes(version: string, email: string): RouteObject[] {
   return [
     {
       path: "/",
-      element: <Shell version={version} />,
+      element: <Shell version={version} email={email} />,
       children: [
         {
           element: <LibraryPage />,
@@ -38,9 +38,9 @@ export function appRoutes(version: string): RouteObject[] {
   ];
 }
 
-export function App({ version }: { version: string }) {
+export function App({ version, email }: { version: string; email: string }) {
   const [queryClient] = useState(makeQueryClient);
-  const [router] = useState(() => createBrowserRouter(appRoutes(version)));
+  const [router] = useState(() => createBrowserRouter(appRoutes(version, email)));
 
   return (
     <QueryClientProvider client={queryClient}>

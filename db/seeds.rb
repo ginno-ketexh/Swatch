@@ -2,6 +2,11 @@
 # so a deploy never invents items and the test database stays empty.
 
 if Rails.env.development?
+  owner = User.find_or_create_by!(email_address: "owner@example.com") do |user|
+    user.password = "swatch-dev-password"
+  end
+  OwnerBootstrap.call!(env: {})
+
   samples = [
     { title: "Terracotta stair", source_url: "https://example.com/stairs", notes: "Warm step colour against plaster.", color: "#7C2D24", tags: [ "brand", "colour" ] },
     { title: "Linen shadow", source_url: nil, notes: "The fold is the interesting part.", color: "#E6E0D4", tags: [] },
@@ -19,7 +24,7 @@ if Rails.env.development?
 
   samples.each do |attrs|
     tags = attrs.delete(:tags)
-    item = Item.find_or_create_by!(title: attrs.fetch(:title)) do |record|
+    item = Item.find_or_create_by!(title: attrs.fetch(:title), user: owner) do |record|
       record.assign_attributes(attrs)
     end
     item.replace_tag_names(tags) if tags

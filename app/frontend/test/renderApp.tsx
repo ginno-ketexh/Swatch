@@ -6,7 +6,7 @@ import { ToastProvider } from "../components/Toasts";
 
 export function renderApp(path: string) {
   const queryClient = makeQueryClient();
-  const router = createMemoryRouter(appRoutes("0.1.0"), { initialEntries: [path] });
+  const router = createMemoryRouter(appRoutes("0.1.0", "owner@example.com"), { initialEntries: [path] });
 
   return {
     queryClient,
