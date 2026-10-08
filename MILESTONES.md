@@ -7,7 +7,7 @@ This is the list of Swatch milestones. Status lives in this file.
 | M1 | Blank App Deployment | Done |
 | M2 | Save & List Items | Done |
 | M3 | Interactive React Screen | Done |
-| M4 | Search, Tags & Filters | Not started |
+| M4 | Search, Tags & Filters | Done |
 | M5 | User Authentication & Authorization | Not started |
 | M6 | Image Uploads | Not started |
 | M7 | Public Share Page & Polish | Not started |
@@ -56,3 +56,18 @@ Done. Merged in pull request #11 on 2026-10-08.
 | M3-06 | Plain-language explainer | Not started |
 
 M3-06 is a plain-language explainer. It is written separately and was not part of pull request #11.
+
+## M4 — Search, Tags & Filters
+
+Done. Merged in pull request #13 on 2026-10-08.
+
+| Story | Name | Status |
+| --- | --- | --- |
+| M4-01 | Search my library | Done |
+| M4-02 | Tag my swatches | Done |
+| M4-03 | Filter by tags | Done |
+| M4-04 | Sort and combine filters | Done |
+| M4-05 | Manage my tags | Done |
+| M4-06 | Plain-language explainer | Not started |
+
+M4-06 is a plain-language explainer. It is written separately and was not part of pull request #13.
