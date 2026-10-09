@@ -5,6 +5,7 @@ import { DetailPanel } from "./DetailPanel";
 import { ItemForm } from "./ItemForm";
 import { LibraryPage } from "./LibraryPage";
 import { ManageTagsPage } from "./ManageTagsPage";
+import { SharedLinksPage } from "./SharedLinksPage";
 import { Shell } from "./Shell";
 import { ImagesEnabledProvider } from "../lib/imagesEnabled";
 import { ToastProvider } from "./Toasts";
@@ -32,6 +33,7 @@ export function appRoutes(version: string, email: string): RouteObject[] {
           ],
         },
         { path: "tags", element: <ManageTagsPage /> },
+        { path: "shares", element: <SharedLinksPage /> },
         { path: "items/new", element: <ItemForm /> },
         { path: "items/:id/edit", element: <ItemForm /> },
       ],

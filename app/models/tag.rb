@@ -2,6 +2,7 @@ class Tag < ApplicationRecord
   belongs_to :user
   has_many :item_tags
   has_many :items, through: :item_tags
+  has_many :share_links, dependent: :delete_all
 
   before_validation :assign_current_user, on: :create
   before_validation :normalize_name

@@ -27,6 +27,33 @@ export type Item = {
   created_at: string;
   tags?: TagRef[];
   image?: ItemImage | null;
+  shared?: boolean;
+};
+
+export type ShareLinkRecord = {
+  id: number;
+  url: string;
+  kind: "item" | "tag";
+  target_title: string | null;
+  title: string | null;
+  include_notes: boolean;
+  include_preview_image: boolean;
+  expires_at: string | null;
+  views_count: number;
+  last_viewed_at: string | null;
+  status: "active" | "expired";
+  created_at: string;
+  item_id: number | null;
+  tag_id: number | null;
+};
+
+export type ShareLinkInput = {
+  item_id?: number;
+  tag_id?: number;
+  title?: string;
+  include_notes: boolean;
+  include_preview_image: boolean;
+  expires_in: "1d" | "7d" | "30d" | "never";
 };
 
 export type ItemInput = {

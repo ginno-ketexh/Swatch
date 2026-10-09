@@ -24,9 +24,9 @@ export function Shell({ version, email }: ShellProps) {
       <a className="skip-link" href="#main">
         Skip to main content
       </a>
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-accent px-4 py-4">
+      <header className="flex max-w-full flex-wrap items-center justify-between gap-3 border-b border-accent px-4 py-4">
         <p className="font-display text-2xl">Swatch</p>
-        <div className="flex flex-wrap items-center gap-4">
+        <nav className="flex max-w-full flex-wrap items-center gap-x-4 gap-y-2" aria-label="Main">
           <p>Version {version}</p>
           <p title={email}>Signed in as {emailLabel(email)}</p>
           <a className="min-h-11 underline" href="/account">
@@ -35,6 +35,9 @@ export function Shell({ version, email }: ShellProps) {
           <Shortcuts />
           <Link className="min-h-11 underline" to={{ pathname: "/tags", search: location.search }}>
             Manage tags
+          </Link>
+          <Link className="min-h-11 underline" to="/shares">
+            Shared links
           </Link>
           <Link className="min-h-11 underline" to="/items/new">
             Add a swatch
@@ -46,7 +49,7 @@ export function Shell({ version, email }: ShellProps) {
               Sign out
             </button>
           </form>
-        </div>
+        </nav>
       </header>
       <main id="main" tabIndex={-1} className="mx-auto w-full max-w-3xl px-4 py-8">
         <Outlet />

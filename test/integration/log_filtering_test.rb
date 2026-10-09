@@ -25,6 +25,23 @@ class LogFilteringTest < ActionDispatch::IntegrationTest
     Rails.logger.stop_broadcasting_to(sink) if sink
   end
 
+  test "share token path segments are filtered" do
+    item = Item.create!(title: "Lamp")
+    link = ShareLink.create!(user: item.user, item: item)
+    output = StringIO.new
+    sink = ActiveSupport::Logger.new(output)
+    sink.level = Logger::DEBUG
+    Rails.logger.broadcast_to(sink)
+
+    get public_share_path(link.token)
+
+    logged = output.string
+    assert_includes logged, "/s/[FILTERED]"
+    assert_not_includes logged, link.token
+  ensure
+    Rails.logger.stop_broadcasting_to(sink) if sink
+  end
+
   test "sign-in logs do not include the password or the email" do
     sign_out
     output = StringIO.new

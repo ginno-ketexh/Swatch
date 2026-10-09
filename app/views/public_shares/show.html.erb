@@ -1,0 +1,40 @@
+<% if @back %>
+  <p class="back">
+    <a href="<%= public_share_path(@link.token) %>">Back to <%= @link.public_title %></a>
+  </p>
+<% end %>
+<article class="sheet">
+  <h1><%= @link.public_title %></h1>
+  <% color = safe_color(@item.color) %>
+  <% if @item.image.attached? %>
+    <% width, height = image_size(@item) %>
+    <% key = @link.signed_key(@item) %>
+    <figure class="frame"<% if color %> style="background-color: <%= color %>"<% end %>>
+      <img
+        src="<%= public_share_image_path(@link.token, key, "large") %>"
+        width="<%= width %>"
+        height="<%= height %>"
+        alt="<%= public_alt(@item) %>">
+      <p>
+        <a href="<%= public_share_image_path(@link.token, key, "large") %>">View full size</a>
+      </p>
+    </figure>
+  <% elsif color %>
+    <div class="swatch-block" style="background-color: <%= color %>"></div>
+  <% end %>
+  <% if color %>
+    <p class="colour">
+      <span class="chip" style="background-color: <%= color %>"></span>
+      <span><%= color %></span>
+    </p>
+  <% end %>
+  <% if @link.include_notes && @item.notes.present? %>
+    <p class="notes"><%= @item.notes %></p>
+  <% end %>
+  <% source = public_http_url(@item.source_url) %>
+  <% if source %>
+    <p class="source">
+      <a href="<%= source %>" rel="noopener noreferrer nofollow ugc" target="_blank"><%= @item.source_domain || source %> (opens in a new tab)</a>
+    </p>
+  <% end %>
+</article>

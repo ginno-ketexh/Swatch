@@ -29,4 +29,22 @@ class ItemCursor
   rescue ArgumentError, JSON::ParserError, TypeError, KeyError
     nil
   end
+
+  def self.encode_for_link(link, item)
+    payload = { "id" => item.id, "created_at" => item.created_at.iso8601(6) }
+    Rails.application.message_verifier("share-item-cursor").generate(payload, purpose: "share:#{link.id}")
+  end
+
+  def self.decode_for_link(link, token)
+    raw = token.to_s
+    return nil if raw.blank? || raw.length > MAX_LENGTH
+
+    data = Rails.application.message_verifier("share-item-cursor").verify(raw, purpose: "share:#{link.id}")
+    {
+      created_at: Time.zone.iso8601(data.fetch("created_at")),
+      id: Integer(data.fetch("id"))
+    }
+  rescue ActiveSupport::MessageVerifier::InvalidSignature, ArgumentError, TypeError, KeyError
+    nil
+  end
 end

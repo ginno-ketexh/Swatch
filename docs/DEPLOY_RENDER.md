@@ -72,6 +72,10 @@ Once an owner account exists, the build does not need `OWNER_EMAIL`, `OWNER_PASS
 - The free database **expires 30 days** after you create it. You then have about 14 days to upgrade it to a paid plan. After that grace period, Render deletes the database and everything in it. There are no backups on the free database, and storage is capped (1 GB). Fine for learning. Not a place to keep a library you care about.
 - Free web services have an ephemeral disk. Anything written on the instance disappears on the next deploy, restart, or sleep. Swatch pictures do not live on that disk. They live in Cloudflare R2, which is described below. Until those settings exist, the site still runs and simply says image uploads are not set up yet.
 
+## Sharing
+
+Public share links need no extra settings on Render or Cloudflare. Nothing new goes in Environment. The free web service still sleeps after about 15 minutes with no visitors, so the first person to open a share link can wait 30–60 seconds while it wakes up. Keep-awake pings and a custom domain are not part of this setup.
+
 ## This deploy
 
 You do not need to change anything on Render. The owner account is already there. A normal deploy does not read `OWNER_EMAIL`, `OWNER_PASSWORD`, or `OWNER_USERNAME`.

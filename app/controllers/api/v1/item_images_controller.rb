@@ -2,8 +2,7 @@ module Api
   module V1
     class ItemImagesController < ApplicationController
       include ApiWriteLimit
-
-      VARIANTS = %w[card card_2x large].freeze
+      include ImageDelivery
 
       limit_api_writes only: %i[update update_alt destroy]
 
@@ -46,7 +45,7 @@ module Api
         return missing unless @item.image.attached?
         return missing unless VARIANTS.include?(params[:variant])
 
-        deliver
+        deliver_image(@item.image, params[:variant], cache_max_age: 240)
       rescue Swatch::ImageStorage::Unavailable, Vips::Error, ActiveStorage::InvariableError
         unavailable
       rescue StandardError => error
@@ -128,31 +127,8 @@ module Api
           render json: { error: "Too many uploads. Wait a minute and try again." }, status: :too_many_requests
         end
 
-        def deliver
-          blob = @item.image.blob
-          if blob.content_type == "image/gif" && params[:variant] == "large"
-            send_representation(blob, blob.content_type)
-            return
-          end
-
-          processed = @item.image.variant(params[:variant].to_sym).processed
-          send_representation(processed, processed.content_type.presence || "image/webp")
-        end
-
-        def send_representation(object, type)
-          if Swatch::ImageStorage.remote?(object.try(:service) || object.blob.service)
-            expires = 5.minutes
-            location = object.url(expires_in: expires, disposition: :inline)
-            response.set_header("Cache-Control", "private, max-age=240")
-            redirect_to location, allow_other_host: true
-          else
-            response.set_header("Cache-Control", "private, max-age=240")
-            send_data object.download, type: type, disposition: "inline"
-          end
-        end
-
         def storage_outage?(error)
-          error.class.name.start_with?("Aws::") || error.is_a?(ActiveStorage::Error)
+          image_storage_outage?(error)
         end
     end
   end
