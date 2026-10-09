@@ -144,7 +144,7 @@ export function ShareDialog({ open, target, onClose }: ShareDialogProps) {
 
   async function onCopy(url: string) {
     const result = await copyText(url, urlRef.current);
-    setNotice(result === "copied" ? "Link copied" : "Press Ctrl+C");
+    setNotice(result === "copied" ? "Link copied" : "Press Ctrl+C to copy");
   }
 
   const dialog = (
@@ -239,11 +239,9 @@ export function ShareDialog({ open, target, onClose }: ShareDialogProps) {
           </div>
         </div>
       ) : null}
-      {notice ? (
-        <p role="status" className="mt-3">
-          {notice}
-        </p>
-      ) : null}
+      <p role="status" className="mt-3">
+        {notice ?? ""}
+      </p>
 
       <div className="mt-6">
         {links.isPending ? (
@@ -274,7 +272,7 @@ export function ShareDialog({ open, target, onClose }: ShareDialogProps) {
                     Copy link to {target.title}
                   </button>
                   <button type="button" className="min-h-11 underline" onClick={() => setPendingRevoke(link)}>
-                    Revoke
+                    Turn off link to {target.title}
                   </button>
                 </div>
               </li>

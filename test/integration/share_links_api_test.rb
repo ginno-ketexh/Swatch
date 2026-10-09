@@ -97,6 +97,15 @@ class ShareLinksApiTest < ActionDispatch::IntegrationTest
     assert_equal "You have 50 share links. Remove some first.", response.parsed_body["error"]
   end
 
+  test "expired links do not block a new one" do
+    item = Item.create!(title: "Cap")
+    50.times { ShareLink.create!(user: users(:owner), item: item, expires_at: 1.day.ago) }
+
+    post api_v1_share_links_path, params: { item_id: item.id }, as: :json
+    assert_response :created
+    assert_equal 1, users(:owner).share_links.active.count
+  end
+
   test "signed out requests are refused and a missing token is refused" do
     item = Item.create!(title: "Lamp")
     sign_out

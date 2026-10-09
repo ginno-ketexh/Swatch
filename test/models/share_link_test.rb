@@ -35,6 +35,17 @@ class ShareLinkTest < ActiveSupport::TestCase
     assert_equal 50, item.user.share_links.count
   end
 
+  test "expired links do not count toward the cap" do
+    item = Item.create!(title: "Cap")
+    50.times { ShareLink.create!(user: item.user, item: item, expires_at: 1.day.ago) }
+
+    extra = ShareLink.create!(user: item.user, item: item)
+
+    assert extra.persisted?
+    assert extra.active?
+    assert_equal 1, item.user.share_links.active.count
+  end
+
   test "expiry status and a blank title" do
     item = Item.create!(title: "Lamp")
     active = ShareLink.create!(user: item.user, item: item, title: "  ", expires_at: 1.day.from_now)

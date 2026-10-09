@@ -22,8 +22,8 @@ export function SharedLinksPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const [pending, setPending] = useState<ShareLinkRecord | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const copyField = useRef<HTMLInputElement>(null);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [notice, setNotice] = useState("");
 
   const listKey = ["share-links", "page", status] as const;
   const links = useQuery({
@@ -74,16 +74,6 @@ export function SharedLinksPage() {
           </button>
         ))}
       </div>
-      <label htmlFor="copied-share-link" className="sr-only">
-        Copied link
-      </label>
-      <input id="copied-share-link" ref={copyField} className="sr-only" readOnly value="" />
-      {notice ? (
-        <p role="status" className="sr-only">
-          {notice}
-        </p>
-      ) : null}
-
       {links.isPending ? (
         <div className="mt-8" role="status" aria-busy="true">
           <p className="sr-only">Loading shared links</p>
@@ -114,54 +104,18 @@ export function SharedLinksPage() {
 
       {links.isSuccess && links.data.length > 0 ? (
         <ul className="mt-8 flex flex-col gap-3">
-          {links.data.map((link) => {
-            const name = link.target_title || link.title || "Untitled";
-            return (
-              <li key={link.id} className="border border-line bg-surface p-4">
-                <p className="break-words">
-                  <Link className="underline" to={libraryPath(link)}>
-                    {name}
-                  </Link>
-                </p>
-                {link.title ? <p className="mt-1">Public title: {link.title}</p> : null}
-                <p className="mt-2">
-                  Created <time dateTime={link.created_at}>{formatWhen(link.created_at)}</time>
-                </p>
-                <p className="mt-1">
-                  {link.expires_at ? (
-                    <>
-                      <time dateTime={link.expires_at}>{expiryText(link)}</time>
-                    </>
-                  ) : (
-                    "Never"
-                  )}
-                </p>
-                <p className="mt-1">{viewsText(link)}</p>
-                <div className="mt-3 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    className="min-h-11 underline"
-                    onClick={() => {
-                      void copyText(link.url, copyField.current).then((result) => {
-                        setNotice(result === "copied" ? "Link copied" : "Press Ctrl+C");
-                      });
-                    }}
-                  >
-                    Copy link to {name}
-                  </button>
-                  {link.status === "expired" ? (
-                    <button type="button" className="min-h-11 underline" onClick={() => setPending(link)}>
-                      Remove link to {name}
-                    </button>
-                  ) : (
-                    <button type="button" className="min-h-11 underline" onClick={() => setPending(link)}>
-                      Turn off link to {name}
-                    </button>
-                  )}
-                </div>
-              </li>
-            );
-          })}
+          {links.data.map((link) => (
+            <ShareLinkRow
+              key={link.id}
+              link={link}
+              notice={copiedId === link.id ? notice : ""}
+              onCopied={(id, text) => {
+                setCopiedId(id);
+                setNotice(text);
+              }}
+              onPending={setPending}
+            />
+          ))}
         </ul>
       ) : null}
 
@@ -187,6 +141,75 @@ export function SharedLinksPage() {
   );
 }
 
+function ShareLinkRow({
+  link,
+  notice,
+  onCopied,
+  onPending,
+}: {
+  link: ShareLinkRecord;
+  notice: string;
+  onCopied: (id: number, text: string) => void;
+  onPending: (link: ShareLinkRecord) => void;
+}) {
+  const fieldRef = useRef<HTMLInputElement>(null);
+  const name = link.target_title || link.title || "Untitled";
+  const fieldId = `share-link-${link.id}`;
+
+  return (
+    <li className="border border-line bg-surface p-4">
+      <p className="break-words">
+        <Link className="underline" to={libraryPath(link)}>
+          {name}
+        </Link>
+      </p>
+      {link.title ? <p className="mt-1">Public title: {link.title}</p> : null}
+      <p className="mt-2">
+        Created <time dateTime={link.created_at}>{formatWhen(link.created_at)}</time>
+      </p>
+      <p className="mt-1">
+        {link.expires_at ? <time dateTime={link.expires_at}>{expiryText(link)}</time> : "Never expires"}
+      </p>
+      <p className="mt-1">{viewsText(link)}</p>
+      <label className="mt-3 block" htmlFor={fieldId}>
+        Share link
+      </label>
+      <input
+        id={fieldId}
+        ref={fieldRef}
+        className="mt-1 w-full border border-ink bg-canvas px-3 py-2"
+        readOnly
+        value={link.url}
+      />
+      <div className="mt-3 flex flex-wrap gap-3">
+        <button
+          type="button"
+          className="min-h-11 underline"
+          onClick={() => {
+            void copyText(link.url, fieldRef.current).then((result) => {
+              onCopied(link.id, result === "copied" ? "Link copied" : "Press Ctrl+C to copy");
+            });
+          }}
+        >
+          Copy link to {name}
+        </button>
+        {link.status === "expired" ? (
+          <button type="button" className="min-h-11 underline" onClick={() => onPending(link)}>
+            Remove link to {name}
+          </button>
+        ) : (
+          <button type="button" className="min-h-11 underline" onClick={() => onPending(link)}>
+            Turn off link to {name}
+          </button>
+        )}
+      </div>
+      <p role="status" className="mt-2">
+        {notice}
+      </p>
+    </li>
+  );
+}
+
 function readStatus(value: string | null): StatusFilter {
   if (value === "expired" || value === "all") return value;
   return "active";
@@ -203,12 +226,12 @@ function formatWhen(iso: string): string {
 }
 
 function expiryText(link: ShareLinkRecord): string {
-  if (!link.expires_at) return "Never";
+  if (!link.expires_at) return "Never expires";
   const then = new Date(link.expires_at).getTime();
   const days = Math.max(1, Math.round(Math.abs(then - Date.now()) / 86_400_000));
   const unit = days === 1 ? "day" : "days";
   if (link.status === "expired" || then <= Date.now()) return `Expired ${days} ${unit} ago`;
-  return `in ${days} ${unit}`;
+  return `Expires in ${days} ${unit}`;
 }
 
 function viewsText(link: ShareLinkRecord): string {
