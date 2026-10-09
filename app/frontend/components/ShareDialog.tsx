@@ -150,7 +150,7 @@ export function ShareDialog({ open, target, onClose }: ShareDialogProps) {
   const dialog = (
     <dialog
       ref={dialogRef}
-      className="confirm-dialog max-w-lg"
+      className="confirm-dialog max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100vw-2rem))] overflow-y-auto"
       aria-modal="true"
       aria-labelledby={titleId}
       onKeyDown={onKeyDown}
