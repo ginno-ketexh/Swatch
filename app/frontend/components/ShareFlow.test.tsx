@@ -43,6 +43,12 @@ const link = (id: number, overrides: Partial<ShareLinkRecord> = {}): ShareLinkRe
   ...overrides,
 });
 
+function copyStatus(dialog: HTMLElement) {
+  const node = within(dialog).getAllByRole("status").find((item) => item.tagName === "P");
+  if (!node) throw new Error("missing copy status");
+  return node;
+}
+
 function stubFetch(impl: (url: string, init?: RequestInit) => Response | Promise<Response>) {
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
@@ -89,8 +95,11 @@ describe("share dialog", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Create link" }));
     const field = await within(dialog).findByRole("textbox", { name: "Share link" });
     expect(field).toHaveValue("https://swatch.example/s/ready");
+    const live = copyStatus(dialog);
+    expect(live).toHaveTextContent("");
     fireEvent.click(within(dialog).getByRole("button", { name: "Copy link" }));
-    expect(await within(dialog).findByRole("status")).toHaveTextContent("Link copied");
+    await waitFor(() => expect(live).toHaveTextContent("Link copied"));
+    expect(live).toBeVisible();
     expect(writes).toEqual(["https://swatch.example/s/ready"]);
 
     fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
@@ -113,9 +122,29 @@ describe("share dialog", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Share" }));
     const dialog = await screen.findByRole("dialog", { name: "Share Terracotta stair" });
     fireEvent.click(within(dialog).getByRole("button", { name: "Create link" }));
-    await within(dialog).findByRole("textbox", { name: "Share link" });
+    const field = await within(dialog).findByRole("textbox", { name: "Share link" });
+    const live = copyStatus(dialog);
+    expect(live).toHaveTextContent("");
     fireEvent.click(within(dialog).getByRole("button", { name: "Copy link" }));
-    expect(await within(dialog).findByRole("status")).toHaveTextContent("Press Ctrl+C");
+    await waitFor(() => expect(live).toHaveTextContent("Press Ctrl+C to copy"));
+    expect(live).toBeVisible();
+    expect(field).toHaveFocus();
+    expect((field as HTMLInputElement).selectionStart).toBe(0);
+    expect((field as HTMLInputElement).selectionEnd).toBe((field as HTMLInputElement).value.length);
+  });
+
+  it("names an existing link's button Turn off link to the swatch", async () => {
+    stubFetch((url) => {
+      if (url.includes("/api/v1/share_links")) return jsonResponse([link(3)]);
+      if (url.includes("/api/v1/tags")) return jsonResponse([]);
+      if (/\/items\/\d+$/.test(url)) return jsonResponse(sample);
+      return jsonResponse({ items: [sample], next_cursor: null });
+    });
+    renderApp("/items/1", { imagesEnabled: true });
+    fireEvent.click(await screen.findByRole("button", { name: "Share" }));
+    const dialog = await screen.findByRole("dialog", { name: "Share Terracotta stair" });
+    expect(await within(dialog).findByRole("button", { name: "Turn off link to Terracotta stair" })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Revoke" })).not.toBeInTheDocument();
   });
 
   it("explains that image uploads are not set up", async () => {
@@ -229,6 +258,70 @@ describe("shared links", () => {
     stubFetch(() => jsonResponse([]));
     renderApp("/shares");
     expect(await screen.findByText("You haven't shared anything yet. Use Share on any swatch or tag.")).toBeInTheDocument();
+  });
+
+  it("describes expiry as expires in, expired ago, or never expires", async () => {
+    const now = Date.now();
+    stubFetch((url) => {
+      if (url.includes("/api/v1/share_links")) {
+        return jsonResponse([
+          link(1, { target_title: "Soon", expires_at: new Date(now + 5 * 86_400_000).toISOString() }),
+          link(2, {
+            target_title: "Old",
+            status: "expired",
+            expires_at: new Date(now - 2 * 86_400_000).toISOString(),
+          }),
+          link(3, { target_title: "Forever", expires_at: null }),
+        ]);
+      }
+      return jsonResponse({ items: [], next_cursor: null });
+    });
+    renderApp("/shares?status=all");
+    expect(await screen.findByText("Expires in 5 days")).toBeInTheDocument();
+    expect(screen.getByText("Expired 2 days ago")).toBeInTheDocument();
+    expect(screen.getByText("Never expires")).toBeInTheDocument();
+  });
+
+  it("copies from a visible link field and keeps the status on the same element", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: () => Promise.reject(new Error("nope")) },
+    });
+    const url = "https://swatch.example/s/visible-link-value";
+    stubFetch((requestUrl) => {
+      if (requestUrl.includes("/api/v1/share_links")) return jsonResponse([link(4, { url })]);
+      return jsonResponse({ items: [], next_cursor: null });
+    });
+    renderApp("/shares");
+    const field = await screen.findByRole("textbox", { name: "Share link" });
+    expect(field).toBeVisible();
+    expect(field).toHaveValue(url);
+    const live = screen.getByRole("status");
+    expect(live).toHaveTextContent("");
+    fireEvent.click(screen.getByRole("button", { name: "Copy link to Terracotta stair" }));
+    await waitFor(() => expect(live).toHaveTextContent("Press Ctrl+C to copy"));
+    expect(live).toBeVisible();
+    expect(live.className).not.toMatch(/sr-only/);
+    expect(field).toHaveFocus();
+    expect((field as HTMLInputElement).selectionStart).toBe(0);
+    expect((field as HTMLInputElement).selectionEnd).toBe(url.length);
+  });
+
+  it("shows Link copied in the same visible status", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: () => Promise.resolve() },
+    });
+    stubFetch((requestUrl) => {
+      if (requestUrl.includes("/api/v1/share_links")) return jsonResponse([link(5)]);
+      return jsonResponse({ items: [], next_cursor: null });
+    });
+    renderApp("/shares");
+    const live = await screen.findByRole("textbox", { name: "Share link" }).then(() => screen.getByRole("status"));
+    expect(live).toHaveTextContent("");
+    fireEvent.click(screen.getByRole("button", { name: "Copy link to Terracotta stair" }));
+    await waitFor(() => expect(live).toHaveTextContent("Link copied"));
+    expect(live).toBeVisible();
   });
 });
 

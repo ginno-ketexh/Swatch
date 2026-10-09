@@ -114,7 +114,7 @@ class ShareLink < ApplicationRecord
 
     def within_link_cap
       return if user.nil?
-      return if user.share_links.count < MAX_LINKS
+      return if user.share_links.active.count < MAX_LINKS
 
       errors.add(:base, "You have 50 share links. Remove some first.")
     end
