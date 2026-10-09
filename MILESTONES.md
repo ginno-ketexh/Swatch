@@ -10,7 +10,7 @@ This is the list of Swatch milestones. Status lives in this file.
 | M4 | Search, Tags & Filters | Done |
 | M5 | User Authentication & Authorization | Done |
 | M6 | Image Uploads | Done |
-| M7 | Public Share Page & Polish | Not started |
+| M7 | Public Share Page & Polish | Done |
 
 ## M1 — Blank App Deployment
 
@@ -101,3 +101,30 @@ Done. Merged in pull request #18 on 2026-10-08. Verified live on Render with Clo
 | M6-06 | Plain-language explainer | Not started |
 
 M6-06 is a plain-language explainer. It is written separately and was not part of pull request #18.
+
+## M7 — Public Share Page & Polish
+
+Done. The public share page merged in pull request #20 on 2026-10-09. Follow-up fixes merged in pull request #21 on 2026-10-09.
+
+| Story | Name | Status |
+| --- | --- | --- |
+| M7-01 | Share one swatch with a link | Done |
+| M7-02 | Share a tag as a collection | Done |
+| M7-03 | The public share page | Done |
+| M7-04 | See and turn off my shared links | Done |
+| M7-05 | Polish | Done |
+| M7-06 | Plain-language explainer | Not started |
+
+M7-06 is a plain-language explainer. It is written separately and was not part of pull request #20 or #21.
+
+All seven milestones (M1 through M7) are complete.
+
+## Still to do
+
+These were left out of the milestones on purpose.
+
+- Share the whole library, or a hand-picked set of swatches. Search or filter on a public page. Change a link after it is created (turn it off and make a new one). Passwords on links. Embed a page on another site. Download the original picture. A custom domain. Keep-awake pings. View numbers beyond a simple counter.
+- Email a password-reset link, and two-factor sign-in. The account can already change its password while signed in.
+- Turn on branch protection for `main`, using the steps in `docs/BRANCH_PROTECTION.md`.
+- The free Render database expires around 2026-11-06. After that there is a short grace period, then Render deletes it. There are no backups on the free plan.
+- `docs/CURSOR_SESSION.md` still describes the M1 session from 2026-10-07. It is out of date.
