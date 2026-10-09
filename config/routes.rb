@@ -26,12 +26,24 @@ Rails.application.routes.draw do
         delete "image", to: "item_images#destroy"
       end
       resources :tags, only: %i[index update destroy]
+      resources :share_links, only: %i[index create destroy]
     end
   end
+
+  token = /[1-9A-HJ-NP-Za-km-z]{36}/
+  get "s/:token", to: "public_shares#show", as: :public_share, constraints: { token: token }
+  get "s/:token/items/:key", to: "public_shares#item", as: :public_share_item, constraints: { token: token }
+  get "s/:token/images/:key/:variant",
+    to: "public_shares#image",
+    as: :public_share_image,
+    constraints: { token: token, variant: /card|card_2x|large/ }
+  get "s", to: "public_shares#unavailable"
+  get "s/*path", to: "public_shares#unavailable"
 
   # The React router owns these URLs. A refresh or a pasted link still
   # has to reach the same HTML shell, behind the owner login.
   root "home#index"
+  get "shares", to: "home#index"
   get "tags", to: "home#index"
   get "items/new", to: "home#index"
   get "items/:id/edit", to: "home#index", constraints: { id: /\d+/ }

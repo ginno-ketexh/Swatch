@@ -280,6 +280,19 @@ export function LibraryPage() {
                       {item.title}
                     </button>
                   </h2>
+                  {item.shared ? (
+                    <p className="mt-2">
+                      <span className="inline-flex min-h-6 items-center gap-1 border border-line px-2 py-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                          <circle cx="4" cy="4" r="1.6" fill="currentColor" />
+                          <circle cx="12" cy="4" r="1.6" fill="currentColor" />
+                          <circle cx="4" cy="12" r="1.6" fill="currentColor" />
+                          <path d="M5.4 4.6 10.6 4.6M4.7 5.5 4.7 10.4M5.6 11.2 10.2 5.4" stroke="currentColor" fill="none" />
+                        </svg>
+                        Shared
+                      </span>
+                    </p>
+                  ) : null}
                   {shown.length > 0 ? (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {shown.map((tag) => (

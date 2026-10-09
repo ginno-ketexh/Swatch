@@ -16,6 +16,7 @@ module ActiveSupport
     setup do
       AuthRateLimit::STORE.clear
       Api::V1::ItemsController::RATE_LIMIT_STORE.clear
+      PublicShareLimit::STORE.clear
       next if is_a?(ActionDispatch::IntegrationTest)
 
       Current.session = users(:owner).sessions.create!(user_agent: "Test")

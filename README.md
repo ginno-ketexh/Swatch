@@ -1,6 +1,6 @@
 # Swatch
 
-Swatch is a personal design-inspiration library. You can save a title, a link, notes, a colour, and one picture, then browse them as cards. A public share page comes in a later milestone.
+Swatch is a personal design-inspiration library. You can save a title, a link, notes, a colour, and one picture, then browse them as cards. You can also share one swatch, or every swatch with a tag, with a link that does not ask people to sign in.
 
 The plan and where each milestone stands are in [MILESTONES.md](MILESTONES.md).
 
@@ -49,6 +49,12 @@ POSTGRES_PASSWORD=swatch
 ```
 
 Then run `bin/setup` as above.
+
+## Sharing
+
+Use **Share** on a swatch, or **Share this tag** on Manage tags or on a single tag filter. The link looks like `/s/` followed by a long code. You choose 1 day, 7 days, 30 days, or never. Notes stay hidden unless you tick **Include my notes**. Chat apps do not get a preview picture unless you tick that option, and they can keep their own copy after you turn the link off. A tag link stays live: swatches you tag later show up too, and removing the tag hides that swatch.
+
+**Shared links** lists what you have shared. **Turn off** deletes that link. The same address never works again. The next visit says the link isn't available.
 
 ## Checks
 

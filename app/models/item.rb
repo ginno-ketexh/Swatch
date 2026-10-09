@@ -2,6 +2,7 @@ class Item < ApplicationRecord
   belongs_to :user
   has_many :item_tags
   has_many :tags, through: :item_tags
+  has_many :share_links, dependent: :delete_all
   has_one_attached :image, dependent: :purge do |attachable|
     saver = { quality: 80, strip: true }
     attachable.variant :card, resize_to_limit: [ 400, nil ], format: :webp, saver: saver, preprocessed: true
@@ -28,7 +29,7 @@ class Item < ApplicationRecord
     nil
   end
 
-  def as_api_json
+  def as_api_json(shared: false)
     {
       id: id,
       title: title,
@@ -38,7 +39,8 @@ class Item < ApplicationRecord
       color: color,
       created_at: created_at.iso8601,
       tags: tags.sort_by { |tag| tag.name.downcase }.map { |tag| { id: tag.id, name: tag.name } },
-      image: image_payload
+      image: image_payload,
+      shared: shared
     }
   end
 

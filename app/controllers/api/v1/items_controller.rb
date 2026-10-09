@@ -41,8 +41,9 @@ module Api
           return
         end
 
+        shared_ids = shared_item_ids(result.items)
         render json: {
-          items: result.items.map(&:as_api_json),
+          items: result.items.map { |item| item.as_api_json(shared: shared_ids.include?(item.id)) },
           next_cursor: result.next_cursor,
           total_count: result.total_count,
           ignored_tags: result.ignored_tags
@@ -50,7 +51,8 @@ module Api
       end
 
       def show
-        render json: @item.as_api_json
+        shared = ShareLink.active.exists?(user_id: Current.user.id, item_id: @item.id)
+        render json: @item.as_api_json(shared: shared)
       end
 
       def create
@@ -108,6 +110,13 @@ module Api
 
         def tag_names_param
           Array(params[:item][:tag_names])
+        end
+
+        def shared_item_ids(items)
+          ids = items.map(&:id)
+          return [] if ids.empty?
+
+          ShareLink.active.where(user_id: Current.user.id, item_id: ids).distinct.pluck(:item_id)
         end
     end
   end

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState, type KeyboardEvent } from "react";
 import { listTags } from "../api/client";
+import { ShareButton } from "./ShareDialog";
 import type { LibraryFilters, SortMode } from "../lib/filters";
 import { summaryText } from "../lib/filters";
 import type { LibraryView } from "../lib/libraryView";
@@ -43,6 +44,8 @@ export function LibraryToolbar({
   });
 
   const usable = (tags.data ?? []).filter((tag) => tag.items_count > 0);
+  const soleTag =
+    filters.tags.length === 1 ? (tags.data ?? []).find((tag) => tag.name.toLowerCase() === filters.tags[0]) : undefined;
   const noTags = tags.isSuccess && usable.length === 0;
   const showTagSearch = usable.length > 12;
   const visible = usable.filter((tag) => tag.name.toLowerCase().includes(tagQuery.trim().toLowerCase()));
@@ -199,6 +202,12 @@ export function LibraryToolbar({
           <button type="button" className="min-h-11 underline" onClick={onClearFilters}>
             Clear all filters
           </button>
+          {soleTag ? (
+            <ShareButton
+              label="Share this tag"
+              target={{ kind: "tag", id: soleTag.id, title: soleTag.name, itemsCount: soleTag.items_count }}
+            />
+          ) : null}
         </div>
       ) : null}
 

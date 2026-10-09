@@ -1,4 +1,4 @@
-import type { FieldErrors, Item, ItemInput, ItemPage, TagSummary } from "./types";
+import type { FieldErrors, Item, ItemInput, ItemPage, ShareLinkInput, ShareLinkRecord, TagSummary } from "./types";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -152,6 +152,61 @@ export function updateImageAlt(id: number, alt: string): Promise<Item> {
     method: "PATCH",
     body: JSON.stringify({ alt }),
   });
+}
+
+function parseShareLink(row: unknown): ShareLinkRecord | null {
+  if (!row || typeof row !== "object") return null;
+  const record = row as Partial<ShareLinkRecord>;
+  if (typeof record.id !== "number" || typeof record.url !== "string") return null;
+  if (record.kind !== "item" && record.kind !== "tag") return null;
+  return {
+    id: record.id,
+    url: record.url,
+    kind: record.kind,
+    target_title: typeof record.target_title === "string" ? record.target_title : null,
+    title: typeof record.title === "string" ? record.title : null,
+    include_notes: record.include_notes === true,
+    include_preview_image: record.include_preview_image === true,
+    expires_at: typeof record.expires_at === "string" ? record.expires_at : null,
+    views_count: typeof record.views_count === "number" ? record.views_count : 0,
+    last_viewed_at: typeof record.last_viewed_at === "string" ? record.last_viewed_at : null,
+    status: record.status === "expired" ? "expired" : "active",
+    created_at: typeof record.created_at === "string" ? record.created_at : new Date(0).toISOString(),
+    item_id: typeof record.item_id === "number" ? record.item_id : null,
+    tag_id: typeof record.tag_id === "number" ? record.tag_id : null,
+  };
+}
+
+export async function listShareLinks(
+  query: { itemId?: number; tagId?: number; status?: "active" | "expired" | "all" } = {},
+  signal?: AbortSignal,
+): Promise<ShareLinkRecord[]> {
+  const params = new URLSearchParams();
+  if (query.itemId) params.set("item_id", String(query.itemId));
+  if (query.tagId) params.set("tag_id", String(query.tagId));
+  if (query.status) params.set("status", query.status);
+  const search = params.toString();
+  const body = await request<unknown>(`/api/v1/share_links${search ? `?${search}` : ""}`, { signal });
+  if (!Array.isArray(body)) return [];
+  return body.flatMap((row) => {
+    const link = parseShareLink(row);
+    return link ? [link] : [];
+  });
+}
+
+export function createShareLink(input: ShareLinkInput): Promise<ShareLinkRecord> {
+  return request<ShareLinkRecord>("/api/v1/share_links", {
+    method: "POST",
+    body: JSON.stringify(input),
+  }).then((row) => {
+    const link = parseShareLink(row);
+    if (!link) throw new ApiError(500, {}, "Request failed");
+    return link;
+  });
+}
+
+export function deleteShareLink(id: number): Promise<void> {
+  return request<void>(`/api/v1/share_links/${id}`, { method: "DELETE" });
 }
 
 export function deleteItemImage(id: number): Promise<void> {

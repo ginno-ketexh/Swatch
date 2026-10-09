@@ -1,1 +1,7 @@
-# See https://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
+# /s/ is intentionally not listed here. A crawler that is blocked
+# never sees the noindex tag, and may still list the bare URL.
+# Public share pages send X-Robots-Tag and a robots meta tag instead.
+
+User-agent: *
+Disallow: /api/
+Disallow: /account

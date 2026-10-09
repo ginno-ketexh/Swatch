@@ -6,6 +6,7 @@ import type { TagSummary } from "../api/types";
 import { readFilters, withFilters } from "../lib/filters";
 import { itemsKey, snapshotItemCaches, restoreItemCaches, updateItemCaches, type ItemCache } from "../lib/items";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { ShareButton } from "./ShareDialog";
 import { ToastViewport, useToast } from "./Toasts";
 
 function renameInCache(data: ItemCache | undefined, id: number, name: string): ItemCache | undefined {
@@ -218,6 +219,10 @@ export function ManageTagsPage() {
                   <p className="min-w-0 flex-1 break-words">
                     {tag.name} <span className="text-muted">({tag.items_count})</span>
                   </p>
+                  <ShareButton
+                    label={`Share this tag ${tag.name}`}
+                    target={{ kind: "tag", id: tag.id, title: tag.name, itemsCount: tag.items_count }}
+                  />
                   <button
                     id={`rename-tag-${tag.id}`}
                     type="button"

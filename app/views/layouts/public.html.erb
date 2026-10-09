@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><%= @page_title %> · Swatch</title>
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta property="og:title" content="<%= @page_title %>">
+    <meta property="og:site_name" content="Swatch">
+    <meta property="og:type" content="website">
+    <meta property="og:description" content="<%= @og_description %>">
+    <% if @og_url %>
+      <meta property="og:url" content="<%= @og_url %>">
+    <% end %>
+    <% if @og_image %>
+      <meta property="og:image" content="<%= @og_image %>">
+      <meta name="twitter:card" content="summary_large_image">
+    <% end %>
+    <link rel="stylesheet" href="/share.css">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  </head>
+  <body>
+    <a class="skip" href="#content">Skip to content</a>
+    <main id="content">
+      <%= yield %>
+    </main>
+    <footer>
+      <p>Shared with Swatch</p>
+    </footer>
+  </body>
+</html>

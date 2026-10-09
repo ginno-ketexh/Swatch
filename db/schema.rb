@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_08_140002) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_09_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -90,6 +90,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_140002) do
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
+  create_table "share_links", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "token", null: false
+    t.bigint "item_id"
+    t.bigint "tag_id"
+    t.string "title", limit: 80
+    t.boolean "include_notes", default: false, null: false
+    t.boolean "include_preview_image", default: false, null: false
+    t.datetime "expires_at"
+    t.integer "views_count", default: 0, null: false
+    t.datetime "last_viewed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_share_links_on_expires_at"
+    t.index ["item_id"], name: "index_share_links_on_item_id"
+    t.index ["tag_id"], name: "index_share_links_on_tag_id"
+    t.index ["token"], name: "index_share_links_on_token", unique: true
+    t.index ["user_id"], name: "index_share_links_on_user_id"
+    t.check_constraint "num_nonnulls(item_id, tag_id) = 1", name: "share_links_one_target"
+    t.check_constraint "title IS NULL OR char_length(title::text) <= 80", name: "share_links_title_length"
+  end
+
   create_table "tags", force: :cascade do |t|
     t.string "name", limit: 30, null: false
     t.datetime "created_at", null: false
@@ -114,5 +136,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_08_140002) do
   add_foreign_key "item_tags", "tags", on_delete: :cascade
   add_foreign_key "items", "users", on_delete: :cascade
   add_foreign_key "sessions", "users", on_delete: :cascade
+  add_foreign_key "share_links", "items", on_delete: :cascade
+  add_foreign_key "share_links", "tags", on_delete: :cascade
+  add_foreign_key "share_links", "users", on_delete: :cascade
   add_foreign_key "tags", "users", on_delete: :cascade
 end

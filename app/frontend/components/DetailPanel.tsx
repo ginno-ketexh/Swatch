@@ -20,6 +20,7 @@ import {
   validateItem,
 } from "../lib/items";
 import { ImageField } from "./ImageField";
+import { ShareButton } from "./ShareDialog";
 import { useImagesEnabled } from "../lib/imagesEnabled";
 import { TagCombobox } from "./TagCombobox";
 import { ToastViewport, useToast } from "./Toasts";
@@ -394,6 +395,12 @@ export function DetailPanel() {
             />
           </div>
           <p className="mt-6">
+            <ShareButton
+              label="Share"
+              target={{ kind: "item", id: item.id, title: item.title, hasImage: Boolean(item.image) }}
+            />
+          </p>
+          <p className="mt-3">
             <Link className="min-h-11 underline" to={{ pathname: `/items/${item.id}/edit`, search: location.search }}>
               Edit all details
             </Link>
