@@ -23,7 +23,7 @@ gem "bcrypt", "~> 3.1.7"
 gem "aws-sdk-s3", require: false
 
 # Resize and strip images with libvips. Render's Ruby image includes it.
-gem "image_processing", "~> 1.14"
+gem "image_processing", "~> 2.2"
 gem "ruby-vips", "~> 2.2"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
