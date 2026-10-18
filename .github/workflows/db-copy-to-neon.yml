@@ -1,0 +1,245 @@
+# DB-2: one-off job that copies Swatch's database from Render to Neon.
+# - Runs only when started by hand (Actions tab > "DB-2 copy database to Neon" > Run workflow).
+# - Only READS from Render. It writes to Neon, and refuses to run if Neon already has tables.
+# - Prints only counts, swatch ids and titles. Never prints the database addresses or passwords.
+# - Delete this file once the move to Neon is confirmed.
+name: DB-2 copy database to Neon
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type COPY to confirm you want to copy the Render database into Neon"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-copy-to-neon
+  cancel-in-progress: false
+
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RENDER_DATABASE_URL: ${{ secrets.RENDER_DATABASE_URL }}
+      NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+      CONFIRM: ${{ inputs.confirm }}
+      PGSSLMODE: require
+      PGCONNECT_TIMEOUT: "20"
+      PGTZ: UTC
+    steps:
+      - name: Check confirmation
+        run: |
+          if [ "$CONFIRM" != "COPY" ]; then
+            echo "::error::You must type COPY in the 'confirm' box to run this job."
+            exit 1
+          fi
+
+      - name: Check secrets and hide passwords from the log
+        run: |
+          set -euo pipefail
+          for v in RENDER_DATABASE_URL NEON_DATABASE_URL; do
+            if [ -z "${!v:-}" ]; then
+              echo "::error::Repository secret $v is missing."
+              exit 1
+            fi
+            # Extra safety on top of GitHub's own secret masking: also mask the
+            # password on its own, so they can never show up in the log.
+            python3 - "$v" <<'PY'
+          import os, sys, urllib.parse
+          u = urllib.parse.urlsplit(os.environ[sys.argv[1]])
+          if u.password:
+              print(f"::add-mask::{u.password}")
+              print(f"::add-mask::{urllib.parse.unquote(u.password)}")
+          PY
+          done
+          echo "Both secrets are set."
+
+      - name: Install PostgreSQL 18 client tools
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update -q
+          sudo apt-get install -y -q postgresql-client-18
+          echo "/usr/lib/postgresql/18/bin" >> "$GITHUB_PATH"
+
+      - name: Check connections and that Neon is empty
+        run: |
+          set -euo pipefail
+          pg_dump --version | grep -q ' 18\.' || { echo "::error::pg_dump is not version 18"; exit 1; }
+          q() { psql "$1" -X -At -v ON_ERROR_STOP=1 -c "$2"; }
+          echo "Render server version: $(q "$RENDER_DATABASE_URL" 'show server_version')"
+          echo "Neon server version:   $(q "$NEON_DATABASE_URL" 'show server_version')"
+          n=$(q "$NEON_DATABASE_URL" "select count(*) from information_schema.tables where table_schema = 'public'")
+          echo "Tables already in Neon's public schema: $n"
+          if [ "$n" != "0" ]; then
+            echo "::error::Neon already has $n table(s). Stopping so nothing gets overwritten."
+            exit 1
+          fi
+
+      - name: Back up Render (read-only)
+        run: |
+          set -euo pipefail
+          DUMP="$RUNNER_TEMP/render-swatch-$(date -u +%Y%m%dT%H%M%SZ).dump"
+          echo "DUMP=$DUMP" >> "$GITHUB_ENV"
+          pg_dump -Fc --no-owner --no-privileges -d "$RENDER_DATABASE_URL" -f "$DUMP"
+          # The backup stays inside this run only. It is NOT uploaded, because this repo is public.
+          echo "Backup size: $(stat -c %s "$DUMP") bytes"
+          echo "Backup sha256: $(sha256sum "$DUMP" | cut -d' ' -f1)"
+          echo "Objects in backup: $(pg_restore -l "$DUMP" | grep -vc '^;')"
+
+      - name: Restore into Neon
+        run: |
+          set -uo pipefail
+          pg_restore --no-owner --no-privileges -d "$NEON_DATABASE_URL" "$DUMP" 2> "$RUNNER_TEMP/restore.log"
+          rc=$?
+          errors=$(grep -c 'error:' "$RUNNER_TEMP/restore.log" || true)
+          echo "pg_restore exit code: $rc, errors: $errors"
+          if [ "$errors" != "0" ]; then
+            echo "Restore messages (first 40 lines, cut to 200 characters):"
+            grep -E 'error:|warning:' "$RUNNER_TEMP/restore.log" | cut -c1-200 | head -40
+            echo "::warning::pg_restore reported errors. The checks below decide if the copy is good."
+          fi
+
+      - name: Fix ID counters (sequences) on Neon
+        run: |
+          set -euo pipefail
+          psql "$NEON_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          DECLARE r record; mx bigint;
+          BEGIN
+            FOR r IN
+              SELECT s.oid::regclass AS seq, t.oid::regclass AS tbl, a.attname AS col
+              FROM pg_class s
+              JOIN pg_namespace n ON n.oid = s.relnamespace AND n.nspname = 'public'
+              JOIN pg_depend d ON d.objid = s.oid AND d.classid = 'pg_class'::regclass AND d.deptype IN ('a','i')
+              JOIN pg_class t ON t.oid = d.refobjid
+              JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = d.refobjsubid
+              WHERE s.relkind = 'S'
+            LOOP
+              EXECUTE format('SELECT max(%I) FROM %s', r.col, r.tbl) INTO mx;
+              IF mx IS NULL THEN
+                PERFORM setval(r.seq, 1, false);
+              ELSE
+                PERFORM setval(r.seq, mx, true);
+              END IF;
+            END LOOP;
+          END $$;
+          SQL
+          echo "Sequence check (the next new id must be above the highest existing id):"
+          psql "$NEON_DATABASE_URL" -X -q -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          DECLARE r record; mx bigint; lv bigint; bad int := 0;
+          BEGIN
+            FOR r IN
+              SELECT s.oid::regclass AS seq, s.relname AS seqname, t.oid::regclass AS tbl, t.relname AS tblname, a.attname AS col
+              FROM pg_class s
+              JOIN pg_namespace n ON n.oid = s.relnamespace AND n.nspname = 'public'
+              JOIN pg_depend d ON d.objid = s.oid AND d.classid = 'pg_class'::regclass AND d.deptype IN ('a','i')
+              JOIN pg_class t ON t.oid = d.refobjid
+              JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = d.refobjsubid
+              WHERE s.relkind = 'S'
+              ORDER BY t.relname
+            LOOP
+              EXECUTE format('SELECT max(%I) FROM %s', r.col, r.tbl) INTO mx;
+              SELECT last_value INTO lv FROM pg_sequences WHERE schemaname = 'public' AND sequencename = r.seqname;
+              RAISE NOTICE '%: highest id %, counter at %', r.tblname, coalesce(mx, 0), coalesce(lv, 0);
+              IF mx IS NOT NULL AND (lv IS NULL OR lv < mx) THEN bad := bad + 1; END IF;
+            END LOOP;
+            IF bad > 0 THEN RAISE EXCEPTION '% sequence(s) are behind their table', bad; END IF;
+            RAISE NOTICE 'Sequences: OK';
+          END $$;
+          SQL
+
+      - name: Verify the copy
+        run: |
+          set -euo pipefail
+          q() { psql "$1" -X -At -F '|' -v ON_ERROR_STOP=1 -c "$2"; }
+          fail=0
+
+          echo "== Row counts (exact) and content fingerprints per table =="
+          tables_r=$(q "$RENDER_DATABASE_URL" "select table_name from information_schema.tables where table_schema='public' and table_type='BASE TABLE' order by 1")
+          tables_n=$(q "$NEON_DATABASE_URL"   "select table_name from information_schema.tables where table_schema='public' and table_type='BASE TABLE' order by 1")
+          if [ "$tables_r" != "$tables_n" ]; then
+            echo "::error::The list of tables is different on Render and Neon."
+            diff <(echo "$tables_r") <(echo "$tables_n") || true
+            fail=1
+          fi
+          printf '%-32s %10s %10s  %s\n' TABLE RENDER NEON RESULT
+          for t in $tables_r; do
+            cr=$(q "$RENDER_DATABASE_URL" "select count(*) from public.\"$t\"")
+            cn=$(q "$NEON_DATABASE_URL"   "select count(*) from public.\"$t\"" 2>/dev/null || echo missing)
+            # Fingerprint of every row, so we know the contents match, not just the counts.
+            # Only the fingerprint is printed, never the data itself.
+            fq="select coalesce(md5(string_agg(x::text, E'\n' order by x::text)), 'empty') from public.\"$t\" x"
+            fr=$(q "$RENDER_DATABASE_URL" "$fq")
+            fn=$(q "$NEON_DATABASE_URL"   "$fq" 2>/dev/null || echo missing)
+            if [ "$cr" = "$cn" ] && [ "$fr" = "$fn" ]; then res=OK
+            elif [ "$cr" = "$cn" ]; then res="CONTENT DIFFERS"; fail=1
+            else res="COUNT DIFFERS"; fail=1; fi
+            printf '%-32s %10s %10s  %s\n' "$t" "$cr" "$cn" "$res"
+          done
+
+          echo
+          echo "== Applied database updates (schema_migrations) =="
+          mr=$(q "$RENDER_DATABASE_URL" "select version from schema_migrations order by version")
+          mn=$(q "$NEON_DATABASE_URL"   "select version from schema_migrations order by version")
+          echo "Render: $(echo "$mr" | grep -c .) versions, latest $(echo "$mr" | tail -1)"
+          echo "Neon:   $(echo "$mn" | grep -c .) versions, latest $(echo "$mn" | tail -1)"
+          if [ "$mr" = "$mn" ]; then echo "schema_migrations: MATCH"; else echo "::error::schema_migrations differ"; diff <(echo "$mr") <(echo "$mn") || true; fail=1; fi
+
+          echo
+          echo "== ar_internal_metadata =="
+          ar=$(q "$RENDER_DATABASE_URL" "select key, value from ar_internal_metadata order by key")
+          an=$(q "$NEON_DATABASE_URL"   "select key, value from ar_internal_metadata order by key")
+          echo "Keys on Neon: $(q "$NEON_DATABASE_URL" "select string_agg(key, ', ' order by key) from ar_internal_metadata")"
+          if [ -n "$an" ] && [ "$ar" = "$an" ]; then echo "ar_internal_metadata: MATCH"; else echo "::error::ar_internal_metadata missing or different"; fail=1; fi
+
+          echo
+          echo "== Spot check: 5 swatches with their photos =="
+          # Newest 5 swatches, preferring ones that have a photo.
+          ids=$(q "$RENDER_DATABASE_URL" "
+            select i.id from items i
+            order by exists (select 1 from active_storage_attachments a
+                             where a.record_type='Item' and a.record_id=i.id) desc, i.id desc
+            limit 5" | paste -sd, -)
+          if [ -z "$ids" ]; then
+            echo "No swatches found, skipping spot check."
+          else
+            # Photo storage keys are compared in full but shown only as a short fingerprint,
+            # because this log is public.
+            sq="select i.id, i.title,
+                       coalesce(string_agg(left(md5(b.key), 10), ',' order by b.key), '(no photo)') as photo_key_fingerprints,
+                       coalesce(md5(string_agg(b.key || ':' || b.checksum, ',' order by b.key)), '-') as full_key_check
+                from items i
+                left join active_storage_attachments a on a.record_type='Item' and a.record_id=i.id
+                left join active_storage_blobs b on b.id=a.blob_id
+                where i.id in ($ids)
+                group by i.id, i.title order by i.id"
+            sr=$(q "$RENDER_DATABASE_URL" "$sq")
+            sn=$(q "$NEON_DATABASE_URL"   "$sq")
+            echo "id | title | photo key fingerprints | full check"
+            echo "$sn"
+            if [ "$sr" = "$sn" ]; then echo "Spot check: MATCH"; else echo "::error::Spot check differs"; diff <(echo "$sr") <(echo "$sn") || true; fail=1; fi
+          fi
+
+          echo
+          if [ "$fail" != "0" ]; then
+            echo "::error::Verification FAILED. Do not switch Swatch to Neon."
+            exit 1
+          fi
+          echo "All checks passed. Neon is an exact copy of Render."
+
+      - name: Remove the backup from the runner
+        if: always()
+        run: |
+          rm -f "${DUMP:-}" "$RUNNER_TEMP/restore.log"
+          echo "Temporary backup removed."
