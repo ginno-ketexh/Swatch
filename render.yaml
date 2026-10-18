@@ -6,6 +6,8 @@
 # bin/render-build.sh. See docs/DEPLOY_RENDER.md.
 
 databases:
+  # swatch-db is no longer used by the app (see DATABASE_URL below). It stays here
+  # as a fallback until the move to Neon is confirmed, then it can be removed.
   - name: swatch-db
     plan: free
     databaseName: swatch
@@ -24,10 +26,12 @@ services:
     startCommand: bundle exec rails server
     healthCheckPath: /up
     envVars:
+      # DATABASE_URL now points at the Neon database (moved in DB-3), not swatch-db.
+      # The value is set by hand on the Render service (Environment tab), never in this file.
+      # Blueprint syncs leave sync: false keys alone, so they won't reset it to swatch-db.
+      # To roll back, paste swatch-db's Internal Database URL back into DATABASE_URL.
       - key: DATABASE_URL
-        fromDatabase:
-          name: swatch-db
-          property: connectionString
+        sync: false
       - key: RAILS_ENV
         value: production
       - key: SECRET_KEY_BASE
