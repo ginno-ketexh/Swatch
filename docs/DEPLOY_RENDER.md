@@ -22,15 +22,16 @@ Copy the long string it prints. You will paste it into Render in a moment. Do no
 2. Connect GitHub if Render asks you to. Grant access to the Swatch repository.
 3. In the dashboard, open **Blueprints** and choose **New Blueprint Instance**.
 4. Select the Swatch repository. Render reads `render.yaml` from the `main` branch.
-5. Render will ask for one secret you generate. Do not put it in the repository.
+5. Render will ask for two values. Do not put either of them in the repository.
    - `SECRET_KEY_BASE`: paste the string from `bin/rails secret`.
-   Leave the other values as the file sets them. `DATABASE_URL` is filled in from the database Render creates. You do not type a database password. The owner account already exists, so the build does not ask for `OWNER_EMAIL`, `OWNER_PASSWORD`, or `OWNER_USERNAME`.
+   - `DATABASE_URL`: paste the Neon **direct** connection address. See [Database (Neon)](#database-neon) below.
+   Leave the other values as the file sets them. The owner account already exists, so the build does not ask for `OWNER_EMAIL`, `OWNER_PASSWORD`, or `OWNER_USERNAME`.
 6. Approve the Blueprint.
 
 Render then creates:
 
 - a **free web service** named `swatch`
-- a **free PostgreSQL database** named `swatch-db`
+- a **free PostgreSQL database** named `swatch-db`. Swatch no longer uses it. It's kept only as a fallback after the move to Neon and will be removed later.
 
 The first deploy takes a few minutes. When it finishes, Render shows a URL that ends in `.onrender.com`.
 
@@ -39,7 +40,7 @@ The first deploy takes a few minutes. When it finishes, Render shows a URL that 
 1. Open the `.onrender.com` URL. You should see the Swatch sign-in page. Sign in with the email and password you already use. After that you should see your library.
 2. Open the same URL with `/up` on the end, for example `https://swatch.onrender.com/up`. The page should say `OK` and nothing else. This address does not ask you to sign in, so Render can check the app without knowing your password.
 
-If `/up` says `Unavailable`, the app started but cannot reach the database. Check that the Blueprint created `swatch-db` and that `DATABASE_URL` is listed on the web service.
+If `/up` says `Unavailable`, the app started but cannot reach the database. Check that `DATABASE_URL` is set on the web service to the Neon direct address, and that the Neon project is awake. See [Database (Neon)](#database-neon).
 
 ## What happens on later merges
 
@@ -69,8 +70,18 @@ Once an owner account exists, the build does not need `OWNER_EMAIL`, `OWNER_PASS
 
 - The free web service **sleeps after about 15 minutes** with no visitors. The next visit wakes it up and can take half a minute or so. `/up` is how Render knows it woke up healthy.
 - The free service has little memory (512 MB). The Blueprint sets one Puma process (`WEB_CONCURRENCY=1`) so it does not run out of memory on boot.
-- The free database **expires 30 days** after you create it. You then have about 14 days to upgrade it to a paid plan. After that grace period, Render deletes the database and everything in it. There are no backups on the free database, and storage is capped (1 GB). Fine for learning. Not a place to keep a library you care about.
+- The free Render database (`swatch-db`, no longer used) **expires 30 days** after you create it. You then have about 14 days to upgrade it to a paid plan. After that grace period, Render deletes the database and everything in it. There are no backups on the free database, and storage is capped (1 GB). Fine for learning. Not a place to keep a library you care about.
 - Free web services have an ephemeral disk. Anything written on the instance disappears on the next deploy, restart, or sleep. Swatch pictures do not live on that disk. They live in Cloudflare R2, which is described below. Until those settings exist, the site still runs and simply says image uploads are not set up yet.
+
+## Database (Neon)
+
+Swatch's data lives in a free **Neon** Postgres database (project `swatch`, Postgres 18, region AWS US West 2 (Oregon), the same region as the web service). It moved there from Render's free database in October 2026.
+
+- `DATABASE_URL` is **set by hand** on Render: the swatch service → **Environment**. Its value is Neon's **direct** connection address, with connection pooling turned off in Neon's **Connect** dialog. It starts with `postgresql://` and ends with `sslmode=require`. Don't use the pooled address, since the app isn't set up for it.
+- `render.yaml` marks `DATABASE_URL` as `sync: false`, so Blueprint syncs never change it. Never put the address in this repository, in chat or in a pull request.
+- To change it, paste the new address in Environment and choose **Save and deploy**.
+- Neon's free plan pauses the database when nobody uses it. The first visit after a quiet spell can be a little slower while it wakes up.
+- Until `swatch-db` is removed, the way back is to paste `swatch-db`'s **Internal Database URL** into `DATABASE_URL` and deploy. Data added on Neon after the move would not be in `swatch-db`.
 
 ## Sharing
 
