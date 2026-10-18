@@ -77,7 +77,7 @@ Once an owner account exists, the build does not need `OWNER_EMAIL`, `OWNER_PASS
 
 Swatch's data lives in a free **Neon** Postgres database (project `swatch`, Postgres 18, region AWS US West 2 (Oregon), the same region as the web service). It moved there from Render's free database in October 2026.
 
-- `DATABASE_URL` is **set by hand** on Render: the swatch service → **Environment**. Its value is Neon's **direct** connection address, with connection pooling turned off in Neon's **Connect** dialog. It starts with `postgresql://` and ends with `sslmode=require`. Don't use the pooled address, since the app isn't set up for it.
+- `DATABASE_URL` is **set by hand** on Render: the swatch service → **Environment**. Its value is Neon's **direct** connection address, with connection pooling turned off in Neon's **Connect** dialog. It starts with `postgresql://` and includes `sslmode=require`, so the connection is always encrypted. Don't use the pooled address, since the app isn't set up for it.
 - `render.yaml` marks `DATABASE_URL` as `sync: false`, so Blueprint syncs never change it. Never put the address in this repository, in chat or in a pull request.
 - To change it, paste the new address in Environment and choose **Save and deploy**.
 - Neon's free plan pauses the database when nobody uses it. The first visit after a quiet spell can be a little slower while it wakes up.
